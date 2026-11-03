@@ -42,29 +42,34 @@ preservar integralmente, com o caminho de cada arquivo original para ler o códi
 
 ## Estrutura
 
-Visão completa, com as regras de dependência, em `docs/arquitetura.md`. Resumo (✅ existe, ⏳ a fazer):
+Visão completa (conceitos, camadas, regra de dependência, decisões) em `docs/arquitetura.md`. Resumo:
 
 ```
-bin/codify.mjs          ✅ entrada; só escolhe qual Órbita roda (global ou do projeto)
-src/cli.mjs             ✅ roteador (sem regra de negócio) — `executarCli` é o contrato com o bin
-src/argumentos.mjs      ✅ leitor de argumentos
-src/banner.mjs          ✅ cabeçalho CodifyTech (funções `montar*` puras + `exibirBanner`)
-src/repasse.mjs         ✅ acha o Órbita instalado no projeto e delega a ele
-src/constantes.mjs, erros.mjs, pausa.mjs, versao.mjs, index.mjs   ✅ base e API pública (`defineConfig`)
-src/comandos/           ✅ help, banner (oculto); dev/doctor/parar/setup/init em `em-construcao`
-src/config/             ✅ defineConfig, raiz do projeto, carregar o orbita.config.mjs
-src/ambiente/           ✅ env, portas, processos, leitores-do-sistema, executar
-                        ⏳ banco, doctor/diagnostico, reparo, erro-de-banco
-src/ui/                 ✅ estilo (cores/degradê) e terminal (TTY/NO_COLOR/CI)
-src/painel/             ⏳ o monitor (abas, logs, alertas, saúde, memória, ações, comando livre)
-src/presets/            ⏳ laravel, vite, nuxt, astro, next, ionic, dotnet
+bin/codify.mjs          entrada; só escolhe qual Órbita roda (global ou do projeto)
+src/cli.mjs             roteador — `executarCli` é o contrato com o bin (não mudar a assinatura)
+src/comandos/           um arquivo curto por comando: dev, doctor, parar, setup, init, help, banner
+src/doctor/ plano/ setup/ init/ parar/   o fluxo de cada comando
+src/painel/             o monitor do dev; consome o Plano (src/plano/tipos.mjs) e não sabe de stack
+src/projeto/            projeto resolvido: servicos, contexto, preferencias, troca-de-porta, urls
+src/presets/            famílias laravel/ (com ambiente.php), node, dotnet, generico; tipos.mjs = contrato
+src/config/             defineConfig, raiz do projeto, carregar o orbita.config.mjs
+src/ambiente/           SO: env, portas, processos, filhos, memoria, sistema, ferramentas, erro-de-banco, executar
+src/ui/                 estilo, terminal, perguntas, tabela, spinner, mensagens
+src/banner.mjs, argumentos, repasse, constantes, erros, pausa, versao, index (API: defineConfig)
 docs/                   origem-foodos, arquitetura, configuracao, instalacao
-test/                   node:test; espelha o src/ (ajudantes em test/_ajudantes)
+test/                   node:test; espelha o src/; ajudantes em test/_ajudantes (contexto falso, plano falso)
 ```
 
-**Regra de dependência:** cada camada só importa das de baixo. `ambiente` não importa `ui` nem
-`config`; `ui`/`banner` não importam `ambiente`; um comando não chama outro (a lógica comum sobe para
-`ambiente/`). Comandos não leem `process.stdout`/`process.argv`: recebem tudo pelo `contexto`.
+**Regra de dependência:** cada camada só importa das de baixo (tabela em `docs/arquitetura.md`).
+`ambiente` não importa `ui`/`config`/`presets`/`projeto`; `presets` só usa `projeto/urls` e
+`projeto/preferencias` (folhas); o `painel` não importa `presets`/`projeto`/`comandos`; um comando
+não chama outro (a lógica comum sobe para uma pasta de baixo). Comandos não leem
+`process.stdout`/`process.argv`: recebem tudo pelo `contexto`.
+
+**Preset × família:** preset = um tipo de serviço (porta, comando, saúde, cor, regex); família = o
+que vale para os serviços de uma stack na mesma pasta (consultar, diagnosticar, reparar, instalar,
+configurar, `paraOPlano`). O Laravel responde pelo `ambiente.php` (sempre UM JSON com `ok`, até em
+erro fatal); mudou o formato, mude `presets/laravel/consulta.mjs` e o teste.
 
 ## Comandos
 
@@ -84,7 +89,16 @@ test/                   node:test; espelha o src/ (ajudantes em test/_ajudantes)
   builds do Windows 11 não lista sockets novos); `netstat` fica de fallback.
 - Erro do dev (config errada, comando inexistente) é `ErroDeUso`/`ErroDeConfig`: a CLI mostra só a
   mensagem. Qualquer outro erro é bug e sobe com o stack.
-- Chave desconhecida no `orbita.config.mjs` é erro (nada de ignorar em silêncio).
+- Chave desconhecida no `orbita.config.mjs` é erro (nada de ignorar em silêncio); preset desconhecido
+  também (com a lista dos válidos).
+- Preferências desta máquina (`DEV_ONLY`, `DEV_EXCEPT`, `DEV_SERVER_HOST`, `DEV_SERVER_PORT`,
+  `DEV_<NOME>_PORT`; Reverb em `REVERB_SERVER_PORT`) ficam no `.env` do primeiro serviço Laravel
+  (ou da raiz). O doctor grava ali; o dev troca porta só na execução (env dos filhos).
+- `ORBITA_PHP` escolhe o PHP quando o do PATH é de outra versão (nesta máquina: PATH = 8.4,
+  FoodOS pede 8.5 → `C:/wamp64/bin/php/php8.5.0/php.exe`).
+- Testes de doctor/reparo/setup/plano usam o contexto falso (`test/_ajudantes/projeto-falso.mjs`):
+  pasta temporária, perguntas com resposta pronta, executor falso. Nunca rode fila/scheduler do
+  FoodOS real num teste (consumiriam jobs do banco de dev).
 
 ## Commits
 
@@ -96,10 +110,11 @@ sugira — a regra do time prevalece.
 
 1. ✅ `bin/codify.mjs` + `orbita.config.mjs`/`defineConfig` + `banner` + `help`
 2. ✅ `src/ambiente` (portas, processos, env) com testes — é a base do doctor, do parar e do dev
-3. `doctor` + reparo, `parar` (faltam em `ambiente`: erro-de-banco, diagnostico, reparo)
-4. `dev` (plano → painel), com `--only/--except/--inline/--no-restart/--sem-checagem`
-5. presets e `init`
-6. `setup`
-7. `v0.1.0` no GitHub Packages; depois a migração do FoodOS (na branch `fix/global` dele, sem
-   branch nova), que troca os scripts do `package.json`, apaga os `.mjs` da raiz e os comandos
-   `foodos:*` do artisan e atualiza o `CLAUDE.md` de lá.
+3. ✅ `doctor` + reparo, `parar`
+4. ✅ `dev` (plano → painel), com `--only/--except/--inline/--no-restart/--sem-checagem` (+ `--listar`, `--plano`)
+5. ✅ presets e `init`
+6. ✅ `setup`
+7. ✅ `v0.1.0` publicada (só etapas 1–2); `0.2.0` (etapas 3–6) a publicar. Migração do FoodOS feita na
+   `fix/global` dele: scripts do `package.json` → `codify`, `orbita.config.mjs`, `.mjs` da raiz e
+   comandos `foodos:*`/`DevServiceProvider`/`config/dev.php` apagados, docs atualizadas; o FoodOS
+   depende de `@codifytech/orbita@^0.2.0`.

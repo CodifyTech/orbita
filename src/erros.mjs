@@ -13,6 +13,14 @@ export class ErroDeUso extends Error {
   }
 }
 
+/** O dev cancelou (Ctrl+C numa pergunta). A CLI sai com 130, o código padrão de interrupção. */
+export class ErroCancelado extends ErroDeUso {
+  constructor() {
+    super('Cancelado.')
+    this.name = 'ErroCancelado'
+  }
+}
+
 export class ErroDeConfig extends ErroDeUso {
   /**
    * @param {string[]} problemas um item por problema encontrado na configuração

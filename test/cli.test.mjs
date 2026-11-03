@@ -48,12 +48,42 @@ describe('executarCli', () => {
     assert.match(erro, /codify help/)
   })
 
-  it('comando ainda não implementado sai com 1, sem banner', async () => {
-    const { codigo, saida, erro } = await rodar(['doctor'])
+  it('doctor aponta serviço com pasta inexistente e sai com 1', async () => {
+    const { codigo, saida } = await rodar(['doctor', '--sem-perguntas'], {
+      'orbita.config.mjs': `export default { nome: 'X', servicos: { worker: { cmd: 'node w.js', cwd: 'nao-existe' } } }`,
+    })
 
     assert.equal(codigo, 1)
-    assert.match(erro, /ainda não foi implementado/)
-    assert.equal(saida, '')
+    assert.match(saida, /✗ Pasta nao-existe .* não encontrada/)
+    assert.match(saida, /1 problema\(s\) impedem o ambiente de subir/)
+  })
+
+  it('doctor com tudo em ordem sai com 0', async () => {
+    const { codigo, saida } = await rodar(['doctor', '--sem-perguntas'], {
+      'orbita.config.mjs': `export default { nome: 'X', servicos: { worker: { cmd: 'node w.js' } } }`,
+    })
+
+    assert.equal(codigo, 0)
+    assert.match(saida, /Ambiente pronto/)
+  })
+
+  it('--only com serviço desconhecido explica os válidos', async () => {
+    const { codigo, erro } = await rodar(['doctor', '--only=xyz'], {
+      'orbita.config.mjs': `export default { nome: 'X', servicos: { worker: { cmd: 'node w.js' } } }`,
+    })
+
+    assert.equal(codigo, 1)
+    assert.match(erro, /Serviço\(s\) desconhecido\(s\): xyz/)
+    assert.match(erro, /Use: worker/)
+  })
+
+  it('parar sem nada rodando avisa e sai com 0', async () => {
+    const { codigo, saida } = await rodar(['parar'], {
+      'orbita.config.mjs': `export default { nome: 'X', servicos: { web: { cmd: 'x', porta: 1 } } }`,
+    })
+
+    assert.equal(codigo, 0)
+    assert.match(saida, /Nada do ambiente local está rodando/)
   })
 
   it('"banner <script>" mostra o cabeçalho com a descrição da config', async () => {

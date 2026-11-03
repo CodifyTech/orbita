@@ -18,12 +18,14 @@ import { encontrarRaiz } from './raiz-do-projeto.mjs'
 
 /**
  * @param {string} cwd pasta onde o dev rodou o comando
+ * @param {{ importar?: boolean }} [opcoes] importar: false = não carrega o orbita.config.mjs (o `init`
+ *   só precisa da raiz, e a config que ele mesmo gerou pode nem carregar ainda)
  * @returns {Promise<Projeto>}
  */
-export async function carregarProjeto(cwd) {
+export async function carregarProjeto(cwd, { importar = true } = {}) {
   const { raiz, arquivoDeConfig } = encontrarRaiz(cwd)
   const pacote = lerPacoteDoProjeto(raiz)
-  const config = arquivoDeConfig
+  const config = arquivoDeConfig && importar
     ? await importarConfig(arquivoDeConfig)
     : defineConfig({ nome: pacote.name ?? basename(raiz) })
 

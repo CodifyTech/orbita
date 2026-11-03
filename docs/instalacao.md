@@ -4,9 +4,8 @@ O `@codifytech/orbita` é um pacote **privado**, publicado no **GitHub Packages*
 CodifyTech. Isso significa que o npm precisa saber (1) onde procurar os pacotes `@codifytech/*` e
 (2) quem é você. Você faz isso uma única vez por máquina.
 
-> **Situação:** o pacote ainda não foi publicado. A primeira versão (`v0.1.0`) sai ao final da etapa 7
-> do roadmap (veja o [README](../README.md)). Até lá, rode direto do repositório:
-> `node bin/codify.mjs help`.
+> **Versões:** a `0.1.0` tem só a base (banner, `help`, config). `dev`, `doctor`, `parar`, `setup` e
+> `init` chegam na `0.2.0`.
 
 ## 1. Criar o token
 

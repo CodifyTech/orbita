@@ -8,8 +8,9 @@ import { exibirBanner } from './banner.mjs'
 import { COMANDOS, buscarComando } from './comandos/index.mjs'
 import { carregarProjeto } from './config/carregar-config.mjs'
 import { BINARIO } from './constantes.mjs'
-import { ErroDeUso } from './erros.mjs'
+import { ErroCancelado, ErroDeUso } from './erros.mjs'
 import { criarEstilo } from './ui/estilo.mjs'
+import { criarPerguntas } from './ui/perguntas.mjs'
 import { detectarTerminal } from './ui/terminal.mjs'
 import { versaoDoOrbita } from './versao.mjs'
 
@@ -19,7 +20,7 @@ import { versaoDoOrbita } from './versao.mjs'
  * @returns {Promise<number>} código de saída
  */
 export async function executarCli(argv, ambiente = {}) {
-  const { cwd = process.cwd(), stdout = process.stdout, stderr = process.stderr, env = process.env } = ambiente
+  const { cwd = process.cwd(), stdin = process.stdin, stdout = process.stdout, stderr = process.stderr, env = process.env } = ambiente
   const terminal = detectarTerminal({ stdout, env })
   const estilo = criarEstilo(terminal)
 
@@ -42,12 +43,14 @@ export async function executarCli(argv, ambiente = {}) {
       throw new ErroDeUso(`Comando desconhecido: "${nome}".`, `Rode "${BINARIO} help" para ver os comandos disponíveis.`)
     }
 
-    const projeto = await carregarProjeto(cwd)
+    const projeto = await carregarProjeto(cwd, { importar: comando.usaConfig !== false })
     const contexto = {
       argumentos: { posicionais: restantes, opcoes },
       projeto,
       comandos: COMANDOS,
+      entrada: stdin,
       saida: stdout,
+      perguntas: criarPerguntas({ entrada: stdin, saida: stdout, estilo }),
       estilo,
       terminal,
       env,
@@ -76,6 +79,6 @@ export async function executarCli(argv, ambiente = {}) {
     }
     stderr.write('\n')
 
-    return 1
+    return erro instanceof ErroCancelado ? 130 : 1
   }
 }
