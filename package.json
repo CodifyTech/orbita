@@ -23,7 +23,7 @@
     "docs"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

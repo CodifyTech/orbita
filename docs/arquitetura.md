@@ -185,7 +185,7 @@ codify dev --except=web
 | Decisão | Motivo |
 |---|---|
 | Sem dependências de runtime | Instala rápido, não quebra por atualização de terceiros |
-| ESM (`.mjs`), Node ≥ 22 | Padrão do Node moderno; glob no `node --test` |
+| ESM (`.mjs`), Node ≥ 24 | Padrão do Node moderno; glob no `node --test` |
 | Configuração em JS (`defineConfig`) | Comentários, autocomplete e validação na hora de carregar |
 | O Órbita não adivinha nada na execução | Previsível: o que está na config é o que roda. Quem descobre a stack é o `codify init`, uma vez |
 | Chave desconhecida na config é erro | Um `servico:` no lugar de `servicos:` seria ignorado em silêncio |

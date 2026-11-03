@@ -203,7 +203,7 @@ docs/                 Arquitetura, configuração, instalação, origem no FoodO
 
 ## Desenvolvimento
 
-Requisitos: **Node 22 ou superior**. O pacote não tem nenhuma dependência de runtime.
+Requisitos: **Node 24 ou superior**. O pacote não tem nenhuma dependência de runtime.
 
 ```bash
 npm test                   # node --test (sem framework de teste externo)

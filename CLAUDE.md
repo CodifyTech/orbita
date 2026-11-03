@@ -81,7 +81,7 @@ erro fatal); mudou o formato, mude `presets/laravel/consulta.mjs` e o teste.
 ## Convenções de código
 
 - Português nos nomes (`servicos`, `portas`, `reparar`); sem `;`, aspas simples, 2 espaços,
-  vírgula final (como o `banner.mjs` original). Node >= 22, ESM `.mjs`, JSDoc nos contratos.
+  vírgula final (como o `banner.mjs` original). Node >= 24, ESM `.mjs`, JSDoc nos contratos.
 - Quem interpreta texto do SO (netstat, ps, .env) é função pura testada com amostras; só
   `ambiente/executar.mjs` roda programas externos, e as funções de `ambiente` aceitam `executar` e
   `plataforma` injetáveis para testar Windows e Linux na mesma máquina.
