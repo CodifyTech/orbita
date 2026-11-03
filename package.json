@@ -1,0 +1,34 @@
+{
+  "name": "@codifytech/orbita",
+  "version": "0.0.1",
+  "description": "CLI da CodifyTech para subir, vigiar e diagnosticar o ambiente local de qualquer projeto da casa.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "author": "CodifyTech <https://codifytech.com.br>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodifyTech/orbita.git"
+  },
+  "bin": {
+    "codify": "bin/codify.mjs"
+  },
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "docs"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}
