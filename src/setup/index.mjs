@@ -11,6 +11,7 @@ import { rodarDoctor } from '../doctor/index.mjs'
 import { precisaDeShell } from '../ambiente/executar.mjs'
 import { versaoDe } from '../ambiente/ferramentas.mjs'
 import { processoDoPlano } from '../plano/montar.mjs'
+import { consultarFamilias } from '../projeto/contexto.mjs'
 import { prepararEnvDoFrontend } from '../presets/node.mjs'
 import { CORES } from '../ui/estilo.mjs'
 import { criarMensagens } from '../ui/mensagens.mjs'
@@ -71,7 +72,11 @@ export async function rodarSetup(contexto) {
   }
 
   cabecalho('Check-up final', 'Conferindo se chaves, banco, portas e variáveis estão prontos para o `codify dev`.')
-  await Promise.all(grupos.map(grupo => grupo.familia.consultar?.(grupo, contexto)))
+  // consultarFamilias (e não só consultar) aplica o ajuste das famílias: sem pcntl ou sem fila redis
+  // o Horizon sai, e com ele a exigência do Redis. É o mesmo caminho do `codify doctor` e do `dev`.
+  for (const { nome, motivo } of await consultarFamilias(contexto)) {
+    mensagens.linha(estilo.suave(`  ${nome} fica de fora: ${motivo}.`))
+  }
 
   if (!(await rodarDoctor(contexto, { perguntar: contexto.perguntas.interativo })).ok) {
     mensagens.linha(`  Os itens com ${estilo.vermelho('✗')} acima impedem o \`codify dev\`. Corrija-os e rode ${estilo.verde('codify setup')} de novo.\n`)
