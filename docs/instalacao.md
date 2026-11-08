@@ -31,11 +31,14 @@ Na sua pasta de usuário (`C:\Users\<você>\.npmrc` no Windows, `~/.npmrc` no Li
 
 ```bash
 # No projeto (recomendado): fixa a versão do Órbita no lockfile, para o time todo
-npm install --save-dev @codifytech/orbita
+bun install --save-dev @codifytech/orbita
 
 # Opcional: o comando `codify` disponível em qualquer pasta
-npm install --global @codifytech/orbita
+bun install --global @codifytech/orbita
 ```
+
+> **Instale com o `bun`.** O `npm install` não funcionou para este pacote; o caminho testado e
+> suportado é o `bun install`.
 
 O `codify` global procura o Órbita instalado no `node_modules` do projeto e, se achar, delega a ele.
 Por isso o `orbita.config.mjs` do projeto sempre usa a versão que está no lockfile dele.
@@ -59,8 +62,8 @@ bunx codify --version   # só no projeto (bun)
 | `401 Unauthorized` | Token ausente, expirado ou sem `read:packages` | Gere outro token e atualize o `~/.npmrc` |
 | `403 Forbidden` | Token sem autorização da organização (SSO) | **Configure SSO** no token e autorize a CodifyTech |
 | `404 Not Found` | Falta a linha `@codifytech:registry=…` | Adicione-a ao `~/.npmrc` |
-| `codify` não é reconhecido | Instalou só no projeto (o binário não está no PATH) | Use `npx codify <comando>` ou `bunx codify <comando>`, um script do `package.json` (`npm run dev`), ou instale global com `npm install --global @codifytech/orbita` |
-| `O orbita.config.mjs importa @codifytech/orbita, mas o pacote não está instalado` | Só tem o `codify` global | Rode `npm install --save-dev @codifytech/orbita` no projeto |
+| `codify` não é reconhecido | Instalou só no projeto (o binário não está no PATH) | Use `npx codify <comando>` ou `bunx codify <comando>`, um script do `package.json` (`npm run dev`), ou instale global com `bun install --global @codifytech/orbita` |
+| `O orbita.config.mjs importa @codifytech/orbita, mas o pacote não está instalado` | Só tem o `codify` global | Rode `bun install --save-dev @codifytech/orbita` no projeto |
 
 ## Publicar uma versão (mantenedores)
 

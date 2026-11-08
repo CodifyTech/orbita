@@ -54,9 +54,12 @@ O pacote é privado, publicado no **GitHub Packages** da organização CodifyTec
 vez no `~/.npmrc` e instala como qualquer pacote:
 
 ```bash
-npm install --save-dev @codifytech/orbita   # no projeto (recomendado: fixa a versão no lockfile)
-npm install --global @codifytech/orbita     # opcional: deixa o comando `codify` em qualquer pasta
+bun install --save-dev @codifytech/orbita   # no projeto (recomendado: fixa a versão no lockfile)
+bun install --global @codifytech/orbita     # opcional: deixa o comando `codify` em qualquer pasta
 ```
+
+> **Use o `bun` para instalar.** O `npm install` não funcionou para este pacote, então a instalação
+> oficial é pelo bun.
 
 Passo a passo do token em [docs/instalacao.md](docs/instalacao.md).
 

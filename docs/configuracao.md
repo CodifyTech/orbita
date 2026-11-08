@@ -21,7 +21,7 @@ export default defineConfig({
   - servicos.web: informe "preset" (ex.: "vite") ou "cmd" (o comando que sobe o serviço)
 ```
 
-> O pacote precisa estar **instalado no projeto** (`npm install --save-dev @codifytech/orbita`) para o
+> O pacote precisa estar **instalado no projeto** (`bun install --save-dev @codifytech/orbita`) para o
 > `import` acima funcionar. Veja [instalacao.md](instalacao.md).
 
 ## Chaves
