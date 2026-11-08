@@ -46,6 +46,15 @@ Por isso o `orbita.config.mjs` do projeto sempre usa a versão que está no lock
 > **Instalou só no projeto?** O binário fica em `node_modules/.bin`, que não está no PATH. Troque
 > `codify` por `npx codify` (npm/pnpm) ou `bunx codify` (bun), ou use os scripts do `package.json`.
 > O primeiro comando num projeto novo é sempre o `init`: `npx codify init` / `bunx codify init`.
+>
+> Também dá para chamar o binário pelo caminho, sem `npx` nem `bunx`:
+>
+> ```powershell
+> .\node_modules\.bin\codify setup     # PowerShell (Windows)
+> ./node_modules/.bin/codify setup     # Git Bash, Linux e macOS
+> ```
+>
+> Rode sempre da raiz do projeto, onde está o `node_modules`.
 
 Confira:
 
@@ -62,7 +71,7 @@ bunx codify --version   # só no projeto (bun)
 | `401 Unauthorized` | Token ausente, expirado ou sem `read:packages` | Gere outro token e atualize o `~/.npmrc` |
 | `403 Forbidden` | Token sem autorização da organização (SSO) | **Configure SSO** no token e autorize a CodifyTech |
 | `404 Not Found` | Falta a linha `@codifytech:registry=…` | Adicione-a ao `~/.npmrc` |
-| `codify` não é reconhecido | Instalou só no projeto (o binário não está no PATH) | Use `npx codify <comando>` ou `bunx codify <comando>`, um script do `package.json` (`npm run dev`), ou instale global com `bun install --global @codifytech/orbita` |
+| `codify` não é reconhecido | Instalou só no projeto (o binário não está no PATH) | Use `npx codify <comando>`, `bunx codify <comando>`, `.\node_modules\.bin\codify <comando>`, um script do `package.json` (`npm run dev`), ou instale global com `bun install --global @codifytech/orbita` |
 | `O orbita.config.mjs importa @codifytech/orbita, mas o pacote não está instalado` | Só tem o `codify` global | Rode `bun install --save-dev @codifytech/orbita` no projeto |
 
 ## Publicar uma versão (mantenedores)

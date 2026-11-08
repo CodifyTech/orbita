@@ -70,6 +70,7 @@ Passo a passo do token em [docs/instalacao.md](docs/instalacao.md).
 > | Você instalou | Como rodar |
 > |---|---|
 > | só no projeto | `npx codify <comando>` ou `bunx codify <comando>` (ex.: `npx codify init`) |
+> | só no projeto | caminho direto do binário: `.\node_modules\.bin\codify <comando>` no PowerShell (ex.: `.\node_modules\.bin\codify setup`) ou `./node_modules/.bin/codify <comando>` no Git Bash, Linux e macOS |
 > | no projeto | scripts do `package.json` (`npm run dev` / `bun run dev`), que o `init` já cria |
 > | global | `codify <comando>` direto, em qualquer pasta |
 >
