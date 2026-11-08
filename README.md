@@ -60,6 +60,18 @@ npm install --global @codifytech/orbita     # opcional: deixa o comando `codify`
 
 Passo a passo do token em [docs/instalacao.md](docs/instalacao.md).
 
+> **Atenção: instalar no projeto não põe o `codify` no PATH.** O binário fica em
+> `node_modules/.bin`, então, só com a instalação local, digitar `codify init` no terminal dá
+> *"`codify` não é reconhecido"*. Você tem três saídas:
+>
+> | Você instalou | Como rodar |
+> |---|---|
+> | só no projeto | `npx codify <comando>` ou `bunx codify <comando>` (ex.: `npx codify init`) |
+> | no projeto | scripts do `package.json` (`npm run dev` / `bun run dev`), que o `init` já cria |
+> | global | `codify <comando>` direto, em qualquer pasta |
+>
+> Na dúvida, instale as duas formas: a global dá o atalho, a local fixa a versão.
+
 > **Por que instalar no projeto, e não só global?** O `codify` global procura o Órbita dentro do
 > `node_modules` do projeto e, se achar, **delega a ele** (o mesmo que Vite e ESLint fazem). Assim
 > todo o time roda exatamente a mesma versão, a que está no lockfile.
@@ -68,10 +80,12 @@ Passo a passo do token em [docs/instalacao.md](docs/instalacao.md).
 
 ## Primeiros passos num projeto
 
-**1.** Na raiz do projeto, gere a config:
+**1.** Na raiz do projeto, gere a config. **Este é sempre o primeiro comando** depois de instalar:
 
 ```bash
-codify init
+codify init          # com o Órbita instalado global
+npx codify init      # só instalado no projeto (npm/pnpm)
+bunx codify init     # só instalado no projeto (bun)
 ```
 
 Ele encontra os apps (até dois níveis abaixo), cria o `orbita.config.mjs` e acrescenta ao
@@ -98,7 +112,8 @@ export default defineConfig({
 
 **2.** Revise a config (todas as chaves e presets em [docs/configuracao.md](docs/configuracao.md)).
 
-**3.** `codify setup` e depois `codify dev`.
+**3.** `codify setup` e depois `codify dev`. Se você não instalou o global, use os scripts que o
+`init` acrescentou ao `package.json`: `npm run setup` / `npm run dev` (ou `bun run …`).
 
 Scripts do projeto que não são do Órbita ganham o mesmo cabeçalho com `codify banner`:
 
