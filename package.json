@@ -1,6 +1,6 @@
 {
   "name": "@codifytech/orbita",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "CLI da CodifyTech para subir, vigiar e diagnosticar o ambiente local de qualquer projeto da casa.",
   "type": "module",
   "license": "UNLICENSED",
