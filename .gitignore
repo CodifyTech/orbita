@@ -3,6 +3,9 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Configuração local de testes (o modelo é o .env.example)
+.env
+
 # Pacotes gerados por `npm pack`
 *.tgz
 

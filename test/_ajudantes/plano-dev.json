@@ -1,0 +1,25 @@
+{
+  "projeto": { "nome": "Órbita (teste local)", "slogan": "serviços de mentira" },
+  "reiniciar": false,
+  "processos": [
+    {
+      "nome": "api",
+      "comando": "node -e \"setInterval(()=>console.log('api',new Date().toLocaleTimeString()),1000)\"",
+      "cor": [96, 165, 250],
+      "descricao": "Serviço falso 1"
+    },
+    {
+      "nome": "web",
+      "comando": "node -e \"setInterval(()=>console.log('web',new Date().toLocaleTimeString()),1500)\"",
+      "cor": [74, 222, 128],
+      "descricao": "Serviço falso 2"
+    },
+    {
+      "nome": "fila",
+      "comando": "node -e \"setInterval(()=>console.log('fila',new Date().toLocaleTimeString()),2000)\"",
+      "cor": [167, 139, 250],
+      "descricao": "Serviço falso 3"
+    }
+  ],
+  "ambiente": [{ "rotulo": "Modo", "valor": "teste local" }]
+}
