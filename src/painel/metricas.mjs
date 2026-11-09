@@ -7,10 +7,10 @@ export const MAX_REQUISICOES = 400
 
 const RE_CTRL_C = /Press Ctrl\+C to (?:stop|quit)/i
 /**
- * `GET 200 /rota ~ 12.50ms` do roteador do preset laravel, ou `/rota ........ ~ 12.5ms` de um
+ * `GET 200 /rota ~ 12.50ms #a1b2c3` do roteador do preset laravel, ou `/rota ........ ~ 12.5ms` de um
  * `php artisan serve` num `cmd` próprio (o carimbo de data já saiu antes daqui).
  */
-const RE_REQUISICAO = /^\s*(?:\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\s+)?(?:([A-Z]+) (\d{3}) )?(\/\S*).*?~\s*([\d.]+)\s*(ms|s)\s*$/
+const RE_REQUISICAO = /^\s*(?:\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\s+)?(?:([A-Z]+) (\d{3}) )?(\/\S*).*?~\s*([\d.]+)\s*(ms|s)(?:\s+#([0-9a-f]+))?\s*$/
 /** O que o `php -S` escreve a cada conexão: não diz nada que a linha do request já não conte. */
 const RE_RUIDO_DO_PHP_S = /^(?:\[\d+\] )?\[[^\]]+\] \S+:\d+ (?:Accepted|Closing|Closed without sending|\[\d{3}\]: [A-Z]+ )|Failed to poll event/
 /** `App\Jobs\EnviarEmail ........ RUNNING | DONE | FAIL` do worker de filas do Laravel. */
@@ -38,16 +38,21 @@ function reDaSaude(s) {
  * A linha é um request do servidor? Verbo e status só vêm na linha do nosso roteador.
  *
  * @param {string} texto linha já limpa
- * @returns {{ caminho: string, ms: number, metodo?: string, status?: number } | null}
+ * @returns {{ caminho: string, ms: number, metodo?: string, status?: number, id?: string } | null}
  */
 export function lerRequisicao(texto) {
   const r = RE_REQUISICAO.exec(texto)
   if (!r) {
     return null
   }
-  const [, metodo, status, caminho, valor, unidade] = r
+  const [, metodo, status, caminho, valor, unidade, id] = r
 
-  return { caminho, ms: unidade === 's' ? Number(valor) * 1000 : Number(valor), ...(metodo ? { metodo, status: Number(status) } : {}) }
+  return {
+    caminho,
+    ms: unidade === 's' ? Number(valor) * 1000 : Number(valor),
+    ...(metodo ? { metodo, status: Number(status) } : {}),
+    ...(id ? { id } : {}),
+  }
 }
 
 /** Cada tipo de métrica: lê a linha, atualiza `s.metricas` e devolve false para descartar a linha. */

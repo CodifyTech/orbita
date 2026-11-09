@@ -468,3 +468,62 @@ describe('colunas do request', () => {
     assert.ok(!tela.includes('/a '))
   })
 })
+
+describe('detalhes gravados + complemento', () => {
+  const GRAVADO = '{"ok":true,"resumo":{"status":201},"secoes":[{"titulo":"Payload","tipo":"json","valor":{"a":1}}]}'
+  const TELESCOPE = '{"ok":true,"resumo":{"status":500,"controller":"C@x"},"secoes":[{"titulo":"Payload","tipo":"json","valor":{"b":2}},{"titulo":"Queries","tipo":"lista","itens":[]}]}'
+
+  const preparar = (req, saidas) => {
+    const estado = criarEstado(criarPlanoFalso())
+    const s = { ...servicoDe(estado, 'server'), detalhesDeRequest: { ...DETALHES, complemento: { programa: 'php', args: ['telescope'] } } }
+    const chamadas = []
+    const executar = async (programa, args, opcoes) => {
+      chamadas.push({ args, opcoes })
+
+      return { ok: true, saida: saidas[args[0] === 'telescope' ? 'telescope' : 'gravado'], erro: '' }
+    }
+    const detalhe = { s, linha: { t: 5000, req }, situacao: 'carregando', secoes: [] }
+    estado.detalheRequest = detalhe
+
+    return { detalhe, chamadas, estado, consultar: criarConsultaDeRequest(estado, { executar, shell: false }) }
+  }
+
+  it('lê o id da linha do roteador', () => {
+    assert.equal(lerRequisicao('GET 200 /x ~ 1.00ms #a1b2').id, 'a1b2')
+    assert.equal(lerRequisicao('GET 200 /x ~ 1.00ms').id, undefined)
+  })
+
+  it('o gravado manda; o complemento só acrescenta o que faltava', async () => {
+    const { consultar, detalhe, chamadas } = preparar({ caminho: '/x', ms: 1, id: 'abc' }, { gravado: GRAVADO, telescope: TELESCOPE })
+    await consultar(detalhe)
+    assert.equal(JSON.parse(chamadas[0].opcoes.env.ORBITA_REQUEST).id, 'abc')
+    assert.deepEqual(detalhe.secoes.map(s => s.titulo), ['Payload', 'Queries'])
+    assert.deepEqual(detalhe.secoes[0].valor, { a: 1 })
+    assert.deepEqual(detalhe.resumo, { status: 201, controller: 'C@x' })
+  })
+
+  it('Telescope desligado não atrapalha o que foi gravado', async () => {
+    const { consultar, detalhe } = preparar({ caminho: '/x', ms: 1, id: 'abc' }, { gravado: GRAVADO, telescope: '{"ok":false,"etapa":"telescope","erro":"desligado"}' })
+    await consultar(detalhe)
+    assert.equal(detalhe.situacao, 'pronto')
+    assert.equal(detalhe.falha ?? null, null)
+    assert.deepEqual(detalhe.secoes.map(s => s.titulo), ['Payload'])
+  })
+
+  it('linha sem id usa só o complemento', async () => {
+    const { consultar, detalhe, chamadas } = preparar({ caminho: '/x', ms: 1 }, { gravado: GRAVADO, telescope: TELESCOPE })
+    await consultar(detalhe)
+    assert.deepEqual(chamadas.map(c => c.args[0]), ['telescope'])
+    assert.equal(detalhe.resumo.controller, 'C@x')
+  })
+
+  it('complemento que chega depois de fechar é descartado', async () => {
+    const { consultar, detalhe, estado } = preparar({ caminho: '/x', ms: 1, id: 'abc' }, { gravado: GRAVADO, telescope: TELESCOPE })
+    const pendente = consultar(detalhe)
+    await Promise.resolve()
+    await Promise.resolve()
+    estado.detalheRequest = null
+    await pendente
+    assert.deepEqual(detalhe.secoes.map(s => s.titulo).includes('Queries'), false)
+  })
+})

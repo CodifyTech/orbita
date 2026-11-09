@@ -169,7 +169,7 @@ Aperte **`?`** no painel para ver todos. Os principais:
 | `←` `→` `Tab` · `1`…`9` | troca de aba · vai direto para a aba |
 | `↓` ou `⏎` · `↑` | na Visão geral: desce para os serviços (`←` `→` escolhem, `⏎` abre os logs) · volta às abas |
 | `↑` `↓` `PgUp` `PgDn` · `End` | rola o log · volta a seguir o fim |
-| `↑` `↓` · `⏎` | na aba do servidor Laravel: escolhe o request (ou clique nele) · abre os detalhes, como no Telescope (`←` `→` trocam a seção, `Esc` volta; precisa de `TELESCOPE_ENABLED=true`) |
+| `↑` `↓` · `⏎` | na aba do servidor Laravel: escolhe o request (ou clique nele) · abre os detalhes: payload, headers e response (`←` `→` trocam a seção, `Esc` volta). Com `TELESCOPE_ENABLED=true`, soma queries, logs, exceções etc. |
 | `r` · `R` · `s` | reinicia o serviço · reinicia todos · para/sobe |
 | `a` · `:` | ações rápidas · comando livre (Tab troca a pasta; a saída vai para a aba "tarefas") |
 | `/` · `c` · `y` | filtra o log · limpa · copia o que está visível |

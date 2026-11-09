@@ -35,8 +35,10 @@
  * @property {string} programa        rodado direto, sem linha de comando montada à mão
  * @property {string[]} args
  * @property {string} cwd             pasta absoluta
+ * @property {{ programa: string, args: string[] }} [complemento]  fonte extra, mesma entrada e saída. Roda depois, sem
+ *                                    segurar a tela, e soma as seções que faltam; sem `id` na linha do log, é a única fonte
  *
- * O painel entrega o request em ORBITA_REQUEST ({ caminho, t, ms, metodo? }; t em epoch ms) e lê um JSON da saída:
+ * O painel entrega o request em ORBITA_REQUEST ({ caminho, t, ms, metodo?, id? }; t em epoch ms) e lê um JSON da saída:
  *   { ok: true, resumo: ResumoDoRequest, secoes: SecaoDoRequest[] }
  *   { ok: false, etapa: string, erro: string, dica?: string }
  */

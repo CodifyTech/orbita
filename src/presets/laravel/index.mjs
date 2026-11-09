@@ -38,7 +38,13 @@ export const PRESETS_LARAVEL = [
     metrica: 'requisicoes',
     // É o que o `artisan serve` roda por baixo, só que a saída dele esconde o verbo e o status.
     comando: (servico, contexto) => linhaDeComando(contexto.php, ['-S', `${servico.host}:${servico.porta}`, '-t', 'public', ROTEADOR]),
-    detalhesDeRequest: (servico, contexto) => ({ programa: contexto.php, args: [SCRIPT, servico.cwd, 'request'], cwd: servico.cwd }),
+    // O que o roteador gravou aparece na hora; o Telescope, se estiver ligado, soma queries, logs etc.
+    detalhesDeRequest: (servico, contexto) => ({
+      programa: contexto.php,
+      args: [SCRIPT, servico.cwd, 'request-gravado'],
+      cwd: servico.cwd,
+      complemento: { programa: contexto.php, args: [SCRIPT, servico.cwd, 'request'] },
+    }),
   }),
   presetLaravel({
     nome: 'laravel:queue',

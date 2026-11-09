@@ -100,25 +100,37 @@ export function abrirDetalhe(ctx, s, linha) {
 export function criarConsultaDeRequest(estado, { executar = executarPadrao, shell = precisaDeShell() } = {}) {
   return async function consultarRequest(detalhe) {
     const { linha, s } = detalhe
-    const { programa, args, cwd } = s.detalhesDeRequest
-    const resposta = lerResposta(
-      await executar(programa, args, {
-        cwd,
-        shell,
-        timeout: TEMPO_DA_CONSULTA,
-        env: { ORBITA_REQUEST: paraVariavel({ caminho: linha.req.caminho, t: linha.t, ms: linha.req.ms, metodo: linha.req.metodo }) },
-      }),
-    )
+    const { programa, args, cwd, complemento } = s.detalhesDeRequest
+    const { caminho, ms, metodo, id } = linha.req
+    const env = { ORBITA_REQUEST: paraVariavel({ caminho, t: linha.t, ms, metodo, id }) }
+    const rodar = async fonte => lerResposta(await executar(fonte.programa, fonte.args, { cwd, shell, timeout: TEMPO_DA_CONSULTA, env }))
+    // Sem id a linha não foi gravada: só o complemento pode saber dela.
+    const temGravado = Boolean(id) || !complemento
+    const resposta = await rodar(temGravado ? { programa, args } : complemento)
     // O dev pode ter fechado (ou aberto outro) enquanto o programa rodava.
     if (estado.detalheRequest !== detalhe) {
       return
     }
-    if (resposta.ok) {
-      Object.assign(detalhe, { situacao: 'pronto', resumo: resposta.resumo ?? {}, secoes: resposta.secoes ?? [] })
-    } else {
+    if (!resposta.ok) {
       Object.assign(detalhe, { situacao: 'falha', falha: { erro: limpar(String(resposta.erro)), dica: resposta.dica ? limpar(String(resposta.dica)) : null } })
+
+      return
+    }
+    Object.assign(detalhe, { situacao: 'pronto', resumo: resposta.resumo ?? {}, secoes: resposta.secoes ?? [] })
+    if (temGravado && complemento) {
+      const extra = await rodar(complemento)
+      if (extra.ok && estado.detalheRequest === detalhe) {
+        somarDetalhes(detalhe, extra)
+      }
     }
   }
+}
+
+/** Acrescenta só o que faltava: o já exibido não muda de lugar nem de valor. */
+export function somarDetalhes(detalhe, extra) {
+  const titulos = new Set(detalhe.secoes.map(secao => secao.titulo))
+  detalhe.resumo = { ...extra.resumo, ...detalhe.resumo }
+  detalhe.secoes.push(...(extra.secoes ?? []).filter(secao => !titulos.has(secao.titulo)))
 }
 
 /** JSON só com ASCII: um acento na variável de ambiente pode chegar trocado no PHP do Windows. */

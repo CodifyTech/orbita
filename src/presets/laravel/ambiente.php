@@ -10,6 +10,8 @@
  *   php ambiente.php <pasta-do-app>                    → estado do ambiente (veja `info()`)
  *   php ambiente.php <pasta-do-app> info --redis       → idem, testando o Redis mesmo se a fila não usar
  *   php ambiente.php <pasta-do-app> criar-banco [nome] → cria o banco da conexão padrão
+ *   php ambiente.php <pasta-do-app> request-gravado    → detalhes de um request que o servidor.php gravou
+ *                                                        (qual: JSON em ORBITA_REQUEST, com o id; não sobe o Laravel)
  *   php ambiente.php <pasta-do-app> request            → detalhes de um request, lidos do Telescope
  *                                                        (qual: JSON em ORBITA_REQUEST; veja `detalheDoRequest()`)
  *
@@ -66,6 +68,11 @@ if (! $pasta || ! is_dir($pasta)) {
 
 $pasta = realpath($pasta);
 
+// Antes do bootstrap de propósito: o arquivo já tem tudo, e subir o Laravel custaria alguns segundos.
+if ($acao === 'request-gravado') {
+    responder(detalheGravado($pasta));
+}
+
 if (! is_file("{$pasta}/vendor/autoload.php")) {
     responder(['ok' => false, 'etapa' => 'vendor', 'erro' => "Sem vendor/autoload.php em {$pasta}: rode composer install"]);
 }
@@ -109,6 +116,7 @@ function info($app, bool $testarRedis): array
         'redis' => $usaRedis ? redis() : ['estado' => 'nao-usado'],
         'fila' => ['conexao' => config('queue.default'), 'filas' => filas()],
         'cache' => config('cache.default'),
+        'sqlite' => extension_loaded('pdo_sqlite'),
         'servidor' => ['workers' => (int) env('PHP_CLI_SERVER_WORKERS', 1)],
         'horizon' => ['instalado' => class_exists('Laravel\\Horizon\\Horizon'), 'chokidar' => is_dir(base_path('node_modules/chokidar'))],
         'pail' => class_exists('Laravel\\Pail\\PailServiceProvider'),
@@ -208,6 +216,29 @@ function reverb(): ?array
         'broadcastHost' => config('broadcasting.connections.reverb.options.host'),
         'broadcastPorta' => config('broadcasting.connections.reverb.options.port'),
     ];
+}
+
+/** O que o servidor.php gravou para o id em ORBITA_REQUEST; já vem no formato { resumo, secoes }. */
+function detalheGravado(string $pasta): array
+{
+    $id = json_decode((string) getenv('ORBITA_REQUEST'), true)['id'] ?? null;
+    $arquivo = "{$pasta}/storage/logs/orbita-requests.sqlite";
+    $sumiu = ['ok' => false, 'etapa' => 'nao-encontrado', 'erro' => 'Este request não está mais gravado.', 'dica' => 'O Órbita guarda os 2000 requests mais recentes.'];
+
+    if (! is_string($id) || ! is_file($arquivo)) {
+        return $sumiu;
+    }
+
+    try {
+        $banco = new PDO("sqlite:{$arquivo}", null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 2]);
+        $consulta = $banco->prepare('SELECT dados FROM requests WHERE id = ?');
+        $consulta->execute([$id]);
+        $dados = $consulta->fetchColumn();
+    } catch (Throwable $e) {
+        return ['ok' => false, 'etapa' => 'sqlite', 'erro' => primeiraLinha($e, 300)];
+    }
+
+    return $dados === false ? $sumiu : ['ok' => true, ...json_decode($dados, true)];
 }
 
 /**

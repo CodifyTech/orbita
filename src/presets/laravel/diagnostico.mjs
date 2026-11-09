@@ -44,6 +44,10 @@ export async function diagnosticarLaravel(grupo, contexto) {
 
   diagnosticarFila(grupo, { ok, aviso })
 
+  if (tem(grupo, 'laravel') && info.sqlite === false) {
+    aviso('Extensão pdo_sqlite', 'ausente: o painel não guarda os detalhes dos requests — habilite-a no php.ini')
+  }
+
   if (tem(grupo, 'laravel:reverb') && info.reverb) {
     diagnosticarChaveDoReverb(info.reverb.chave, contexto, { ok, aviso })
   }
