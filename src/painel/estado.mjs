@@ -53,6 +53,7 @@ export function criarServico(nome, extra = {}) {
     saude: null,
     padroes: PADROES_PADRAO,
     metrica: null,
+    detalhesDeRequest: null,
     log: null,
     estado: 'parado',
     detalhe: null,
@@ -151,6 +152,7 @@ export function criarEstado(bruto, { agora = Date.now() } = {}) {
         saude: p.saude ?? null,
         padroes: compilarPadroes(p.padroes),
         metrica: p.metrica ?? null,
+        detalhesDeRequest: p.detalhesDeRequest ?? null,
       }),
     ),
     ...plano.logs.map(l =>
@@ -181,8 +183,10 @@ export function criarEstado(bruto, { agora = Date.now() } = {}) {
     /** Na visão geral, ←→ andam pelos cartões (true) ou pelas abas (false). */
     focoNosCartoes: false,
     abaId: 'geral',
-    /** Rolagem, contador de novas e filtro de cada aba de log. */
+    /** Rolagem, contador de novas, filtro e request escolhido de cada aba de log. */
     vistas: {},
+    /** Tela de detalhes do request aberto (requests.mjs); ocupa o conteúdo da aba dele. */
+    detalheRequest: null,
     /** Digitando o filtro (`/`). */
     digitando: false,
     /** Caixa aberta por cima da tela: 'ajuda' | 'acoes' | 'comando' | 'encerrando' | null. */
@@ -201,8 +205,8 @@ export function criarEstado(bruto, { agora = Date.now() } = {}) {
     inline: false,
     /** Processos das ações e comandos livres em andamento. */
     tarefas: new Set(),
-    /** Onde cada aba, cartão e alerta foi desenhado, para o clique do mouse achar o alvo. */
-    regioes: { abas: [], cards: [], alertas: [] },
+    /** Onde cada aba, cartão, alerta e linha de log foi desenhado, para o clique do mouse achar o alvo. */
+    regioes: { abas: [], cards: [], alertas: [], log: [], secoes: [] },
     /** Chamado a cada linha registrada (o modo inline escreve a linha aqui). */
     aoRegistrar: null,
   }
@@ -220,8 +224,11 @@ export const tarefasDe = estado => estado.servicos.find(s => s.tipo === 'tarefas
 
 export const servicoDe = (estado, id) => estado.servicos.find(s => s.nome === id) ?? null
 
-/** Rolagem (0 = seguindo o fim), linhas novas desde que parou de seguir e filtro de uma aba de log. */
-export const vista = (estado, id) => (estado.vistas[id] ??= { rolagem: 0, novos: 0, filtro: '' })
+/**
+ * Uma aba de log: rolagem (0 = seguindo o fim), linhas novas desde que parou de seguir, filtro, `seq`
+ * do request escolhido e `revelar` (o próximo desenho rola até deixar o escolhido visível).
+ */
+export const vista = (estado, id) => (estado.vistas[id] ??= { rolagem: 0, novos: 0, filtro: '', sel: null, revelar: false })
 
 /** A linha passa no filtro (sem diferenciar maiúsculas)? */
 export const casa = (linha, filtro) => !filtro || linha.texto.toLowerCase().includes(filtro.toLowerCase())
@@ -250,6 +257,7 @@ export function irPara(estado, id) {
   estado.abaId = id
   estado.digitando = false
   estado.focoNosCartoes = false
+  estado.detalheRequest = null
   const s = servicoDe(estado, id)
   if (s) {
     s.naoVistos = 0

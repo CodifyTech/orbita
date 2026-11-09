@@ -14,6 +14,7 @@ import { BINARIO } from '../constantes.mjs'
 import { criarEstado, mostrarToast, processos } from './estado.mjs'
 import { tratarEntrada } from './entrada.mjs'
 import { ligarInline } from './inline.mjs'
+import { criarConsultaDeRequest } from './requests.mjs'
 import { montarResumo } from './resumo.mjs'
 import { criarSupervisor } from './supervisor.mjs'
 import { criarExecutorDeTarefas } from './tarefas.mjs'
@@ -127,6 +128,7 @@ export async function iniciarPainel(plano, { modo = 'painel', stdout = process.s
       alternarMouse,
       redesenharTudo,
       rodarTarefa,
+      consultarRequest: criarConsultaDeRequest(estado),
     }
 
     const aoDigitar = dados => {
@@ -224,7 +226,10 @@ export async function iniciarPainel(plano, { modo = 'painel', stdout = process.s
     }
 
     estado.painel = true
-    escrever(ENTRAR)
+    // Mouse ligado desde o início: sem o relato de cliques, a roda chega como ↑↓ (modo 1007) e seria
+    // confundida com a navegação entre os requests. `m` desliga para selecionar texto arrastando.
+    estado.mouse = true
+    escrever(ENTRAR + LIGAR_MOUSE)
     stdin.setRawMode?.(true)
     stdin.setEncoding?.('utf8')
     stdin.resume?.()

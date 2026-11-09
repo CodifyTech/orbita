@@ -137,6 +137,7 @@ stack. `index.mjs` só liga as peças:
 | `logs.mjs`, `classificacao.mjs`, `vigia-log.mjs` | buffers limitados, erro/aviso pelas regex do plano, alertas com contexto, arquivo de log lido por posição |
 | `teclas.mjs`, `mouse.mjs`, `entrada.mjs` | atalhos (`?` mostra todos), mouse, leitura do teclado |
 | `acoes.mjs`, `comando-livre.mjs`, `tarefas.mjs` | menu `a`, caixa `:` e a aba "tarefas" |
+| `requests.mjs` | escolher o request do log e abrir os detalhes, com o programa que o plano indica (`detalhesDeRequest`; no Laravel, `ambiente.php request`, que lê o Telescope) |
 | `inline.mjs` | modo sem painel (`--inline` ou sem TTY) |
 | `tela/` | cabeçalho, abas, cartões, alertas, caixas, splash e o `desenhista`, que redesenha só as linhas que mudaram |
 | `texto.mjs`, `cores.mjs`, `formato.mjs` | largura visual (ANSI e caracteres largos), cores e formatos |

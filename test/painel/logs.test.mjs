@@ -64,7 +64,7 @@ describe('registrar', () => {
     vista(estado, 'todos').rolagem = 2
     vista(estado, 'todos').filtro = 'nada a ver'
     registrar(estado, server, 'nova')
-    assert.deepEqual(vista(estado, 'server'), { rolagem: 6, novos: 1, filtro: '' })
+    assert.deepEqual(vista(estado, 'server'), { rolagem: 6, novos: 1, filtro: '', sel: null, revelar: false })
     assert.equal(vista(estado, 'todos').rolagem, 2)
   })
 

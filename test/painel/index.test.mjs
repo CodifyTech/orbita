@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
 import { describe, it } from 'node:test'
 import { iniciarPainel } from '../../src/painel/index.mjs'
-import { ENTRAR, SAIR } from '../../src/painel/terminal.mjs'
+import { ENTRAR, LIGAR_MOUSE, SAIR } from '../../src/painel/terminal.mjs'
 import { semCores } from '../../src/painel/texto.mjs'
 import { pausa } from '../../src/pausa.mjs'
 
@@ -66,7 +66,7 @@ describe('modo painel (terminal falso, processo de verdade)', () => {
     assert.deepEqual(stdin.raw, [true, false])
     assert.equal(stdin.listenerCount('data'), 0)
     const tudo = escrito()
-    assert.ok(tudo.startsWith(ENTRAR))
+    assert.ok(tudo.startsWith(ENTRAR + LIGAR_MOUSE), 'sem o mouse ligado, a roda chegaria como ↑↓ e moveria a seleção')
     assert.ok(tudo.includes(SAIR))
     assert.match(naAba, /\$ node -e/)
     assert.match(naAba, /linha do eco/)

@@ -27,6 +27,40 @@
  * @property {{ erro: string, aviso: string }} padroes  regex (texto, flag "i") que classificam linhas do log
  * @property {'requisicoes' | 'jobs' | 'hmr' | 'execucoes' | null} metrica  o que contar nas linhas de saída
  *                                    (req/min da API, jobs da fila, atualizações do Vite, tarefas do scheduler)
+ * @property {DetalhesDeRequest | null} [detalhesDeRequest]  com isto, ↑↓ e o clique escolhem os requests do log e ⏎ abre os detalhes
+ */
+
+/**
+ * @typedef {object} DetalhesDeRequest programa que descreve um request do log para o painel
+ * @property {string} programa        rodado direto, sem linha de comando montada à mão
+ * @property {string[]} args
+ * @property {string} cwd             pasta absoluta
+ *
+ * O painel entrega o request em ORBITA_REQUEST ({ caminho, t, ms }; t em epoch ms) e lê um JSON da saída:
+ *   { ok: true, resumo: ResumoDoRequest, secoes: SecaoDoRequest[] }
+ *   { ok: false, etapa: string, erro: string, dica?: string }
+ */
+
+/**
+ * @typedef {object} ResumoDoRequest o cabeçalho da tela de detalhes (campos ausentes não aparecem)
+ * @property {string} [metodo]
+ * @property {string} [caminho]
+ * @property {number} [status]
+ * @property {number} [duracaoMs]
+ * @property {number} [memoriaMb]
+ * @property {string} [ip]
+ * @property {string} [host]
+ * @property {string} [hora]
+ * @property {string} [controller]
+ * @property {string[]} [middleware]
+ */
+
+/**
+ * @typedef {object} SecaoDoRequest uma aba da tela de detalhes
+ * @property {string} titulo
+ * @property {'json' | 'lista'} tipo
+ * @property {any} [valor]            tipo json: qualquer valor (texto puro aparece como está)
+ * @property {{ texto: string, detalhe?: string, nivel?: 'erro' | 'alerta' | null }[]} [itens]  tipo lista
  */
 
 /**

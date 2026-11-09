@@ -29,6 +29,18 @@ function reDaSaude(s) {
   return linhasDeSaude.get(s)
 }
 
+/**
+ * A linha é um request do `php artisan serve`?
+ *
+ * @param {string} texto linha já limpa
+ * @returns {{ caminho: string, ms: number } | null}
+ */
+export function lerRequisicao(texto) {
+  const r = RE_REQUISICAO.exec(texto)
+
+  return r ? { caminho: r[1], ms: r[3] === 's' ? Number(r[2]) * 1000 : Number(r[2]) } : null
+}
+
 /** Cada tipo de métrica: lê a linha, atualiza `s.metricas` e devolve false para descartar a linha. */
 const ANALISADORES = {
   requisicoes(s, texto, agora) {
@@ -36,11 +48,11 @@ const ANALISADORES = {
     if (/~/.test(texto) && reDaSaude(s)?.test(texto)) {
       return false
     }
-    const r = RE_REQUISICAO.exec(texto)
+    const r = lerRequisicao(texto)
     if (r) {
       const m = s.metricas
       m.reqs ??= []
-      m.reqs.push({ t: agora, ms: r[3] === 's' ? Number(r[2]) * 1000 : Number(r[2]) })
+      m.reqs.push({ t: agora, ms: r.ms })
       if (m.reqs.length > MAX_REQUISICOES) {
         m.reqs.splice(0, 100)
       }

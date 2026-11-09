@@ -21,6 +21,8 @@
  * @property {'requisicoes' | 'jobs' | 'hmr' | 'execucoes' | null} metrica
  * @property {(servico: Servico, contexto: Contexto) => string} comando  linha de comando quando o serviço não tem `cmd`
  * @property {(servico: Servico, contexto: Contexto) => string} [descrever]  descrição calculada (ex.: quantas filas)
+ * @property {(servico: Servico, contexto: Contexto) => import('../plano/tipos.mjs').DetalhesDeRequest} [detalhesDeRequest]
+ *           como buscar os detalhes de um request do log; sem isto, a aba só rola
  */
 
 /**

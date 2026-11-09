@@ -60,6 +60,7 @@ export function processoDoPlano(servico, contexto) {
     saude: saudeDe(servico, host),
     padroes: preset?.padroes ?? PADROES_NODE,
     metrica: preset?.metrica ?? null,
+    detalhesDeRequest: preset?.detalhesDeRequest?.(servico, contexto) ?? null,
   }
 }
 

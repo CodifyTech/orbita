@@ -54,6 +54,15 @@ describe('montarPlano', () => {
     assert.equal(queue.metrica, 'jobs')
   })
 
+  it('só o servidor Laravel sabe detalhar requests', () => {
+    const [server, queue] = plano().processos
+
+    assert.equal(server.detalhesDeRequest.args.at(-1), 'request')
+    assert.match(server.detalhesDeRequest.args[0], /ambiente\.php$/)
+    assert.equal(server.detalhesDeRequest.cwd, server.cwd)
+    assert.equal(queue.detalhesDeRequest, null)
+  })
+
   it('logs, cabeçalho, ações e alvos vêm das famílias', () => {
     const { logs, ambiente, acoes, alvos } = plano()
 

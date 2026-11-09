@@ -4,7 +4,7 @@
 import { classificar } from './classificacao.mjs'
 import { abaAtual, casa, mostrarToast, vista } from './estado.mjs'
 import { horaDe } from './formato.mjs'
-import { analisar } from './metricas.mjs'
+import { analisar, lerRequisicao } from './metricas.mjs'
 import { limpar } from './texto.mjs'
 
 export const MAX_LINHAS = 4000
@@ -40,13 +40,16 @@ export function avancar(s, agora = Date.now()) {
  * @param {import('./estado.mjs').Servico & Record<string, any>} s
  * @param {string} texto
  * @param {import('./classificacao.mjs').Nivel} [nivel]
- * @param {{ antigo?: boolean, alerta?: string | null, agora?: number }} [opcoes]
+ * @param {{ antigo?: boolean, alerta?: string | null, agora?: number, req?: { caminho: string, ms: number } | null }} [opcoes]
  *   antigo: histórico lido ao abrir um arquivo de log (não alerta); alerta: texto do alerta, se
- *   diferente da linha
+ *   diferente da linha; req: a linha é um request que dá para escolher e detalhar
  * @returns {import('./estado.mjs').Linha}
  */
-export function registrar(estado, s, texto, nivel = null, { antigo = false, alerta = null, agora = Date.now() } = {}) {
+export function registrar(estado, s, texto, nivel = null, { antigo = false, alerta = null, agora = Date.now(), req = null } = {}) {
   const linha = { seq: ++estado.seq, t: agora, texto, nivel, s }
+  if (req) {
+    linha.req = req
+  }
   s.linhas.push(linha)
   if (s.linhas.length > MAX_LINHAS + FOLGA) {
     s.linhas.splice(0, FOLGA)
@@ -59,10 +62,11 @@ export function registrar(estado, s, texto, nivel = null, { antigo = false, aler
   avancar(s, agora)
   s.atividade[s.atividade.length - 1]++
 
-  // Quem está lendo lá em cima continua no mesmo ponto; o selo conta as linhas novas.
+  // Quem está lendo lá em cima, ou com um request escolhido, continua no mesmo ponto; o selo conta
+  // as linhas novas.
   for (const id of [s.nome, 'todos']) {
     const v = estado.vistas[id]
-    if (v?.rolagem > 0 && casa(linha, v.filtro)) {
+    if ((v?.rolagem > 0 || v?.sel != null) && casa(linha, v.filtro)) {
       v.rolagem++
       v.novos++
     }
@@ -135,7 +139,8 @@ export function linhaDoProcesso(estado, s, bruta, agora = Date.now()) {
   if (!texto.trim() || analisar(s, texto, agora) === false) {
     return
   }
-  registrar(estado, s, texto.slice(0, MAX_TEXTO), classificar(texto, s.padroes), { agora })
+  const req = s.detalhesDeRequest ? lerRequisicao(texto) : null
+  registrar(estado, s, texto.slice(0, MAX_TEXTO), classificar(texto, s.padroes), { agora, req })
 }
 
 /**
@@ -167,6 +172,7 @@ export function limparLog(estado, s) {
   s.ultima = null
   estado.todas = estado.todas.filter(l => l.s !== s)
   vista(estado, s.nome).rolagem = 0
+  vista(estado, s.nome).sel = null
 }
 
 /** Esvazia todos os logs. */
@@ -174,6 +180,7 @@ export function limparTodos(estado) {
   for (const s of estado.servicos) {
     s.linhas = []
     s.ultima = null
+    vista(estado, s.nome).sel = null
   }
   estado.todas = []
   vista(estado, 'todos').rolagem = 0

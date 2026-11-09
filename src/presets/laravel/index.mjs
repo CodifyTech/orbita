@@ -7,7 +7,7 @@ import { linhaDeComando } from '../../ambiente/executar.mjs'
 import { apontaParaEstaMaquina } from '../../projeto/urls.mjs'
 import { ehFrontendVite } from '../node.mjs'
 import { PADROES_PHP } from '../padroes.mjs'
-import { consultarLaravel } from './consulta.mjs'
+import { consultarLaravel, SCRIPT } from './consulta.mjs'
 import { diagnosticarLaravel } from './diagnostico.mjs'
 import { repararLaravel } from './reparo.mjs'
 import { configuracaoLaravel } from './setup.mjs'
@@ -37,6 +37,7 @@ export const PRESETS_LARAVEL = [
     health: '/up',
     metrica: 'requisicoes',
     comando: (servico, contexto) => artisan(contexto, 'serve', `--host=${servico.host}`, `--port=${servico.porta}`),
+    detalhesDeRequest: (servico, contexto) => ({ programa: contexto.php, args: [SCRIPT, servico.cwd, 'request'], cwd: servico.cwd }),
   }),
   presetLaravel({
     nome: 'laravel:queue',

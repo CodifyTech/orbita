@@ -8,6 +8,7 @@ import { teclaAcoes } from './acoes.mjs'
 import { abrirComando, imprimivel, teclaComando } from './comando-livre.mjs'
 import { abaAtual, abas, irPara, mostrarToast, moverCartao, nosCartoes, servicoDe, trocarAba, verNoLog, visiveis, vista } from './estado.mjs'
 import { limparAlertas, limparLog, limparTodos, linhasVisiveis, textoDoAlerta } from './logs.mjs'
+import { abrirDetalhe, escolhido, moverSelecao, teclaDetalhe } from './requests.mjs'
 
 /**
  * @typedef {object} Contexto o estado e as ações com efeito que as teclas disparam
@@ -23,6 +24,7 @@ import { limparAlertas, limparLog, limparTodos, linhasVisiveis, textoDoAlerta } 
  * @property {() => void} alternarMouse
  * @property {() => void} redesenharTudo        Ctrl+L
  * @property {(tarefa: import('./tarefas.mjs').Tarefa) => void} rodarTarefa
+ * @property {(detalhe: any) => void} consultarRequest  busca os dados da tela de detalhes do request
  * @property {() => number} [agora]
  */
 
@@ -80,9 +82,15 @@ const agoraDe = ctx => ctx.agora?.() ?? Date.now()
  */
 export function rolar(estado, id, n) {
   const v = vista(estado, id)
+  const antes = v.rolagem
   v.rolagem = Math.max(0, v.rolagem + n)
+  v.revelar = false
   if (v.rolagem === 0) {
     v.novos = 0
+    // Voltou ao fim rolando: o dev quer seguir o log, e um request escolhido congelaria a vista.
+    if (antes > 0) {
+      v.sel = null
+    }
   }
 }
 
@@ -117,6 +125,9 @@ export function tratarTecla(ctx, k) {
   }
   if (estado.overlay === 'acoes') {
     return teclaAcoes(ctx, nome, k)
+  }
+  if (estado.detalheRequest) {
+    return teclaDetalhe(ctx, nome)
   }
 
   switch (nome) {
@@ -213,10 +224,15 @@ export function teclaLog(ctx, nome, s) {
   switch (nome) {
     case 'cima':
     case 'k':
-      return rolar(estado, id, 1)
+      return moverSelecao(estado, s, -1) || rolar(estado, id, 1)
     case 'baixo':
     case 'j':
-      return rolar(estado, id, -1)
+      return moverSelecao(estado, s, 1) || rolar(estado, id, -1)
+    case 'enter': {
+      const linha = s && escolhido(estado, s)
+
+      return linha ? abrirDetalhe(ctx, s, linha) : undefined
+    }
     case 'pgup':
       return rolar(estado, id, pagina)
     case 'pgdn':
@@ -225,6 +241,7 @@ export function teclaLog(ctx, nome, s) {
     case 'g':
       // A vista limita ao topo de verdade na hora de desenhar.
       v.rolagem = Number.MAX_SAFE_INTEGER
+      v.revelar = false
 
       return
     case 'end':
@@ -232,6 +249,8 @@ export function teclaLog(ctx, nome, s) {
     case 'G':
       v.rolagem = 0
       v.novos = 0
+      v.sel = null
+      v.revelar = false
 
       return
     case '/':
@@ -239,6 +258,12 @@ export function teclaLog(ctx, nome, s) {
 
       return
     case 'esc':
+      // Primeiro larga o request escolhido; só o Esc seguinte limpa o filtro.
+      if (v.sel !== null) {
+        v.sel = null
+
+        return
+      }
       v.filtro = ''
 
       return
@@ -325,4 +350,5 @@ function digitarFiltro(ctx, nome, k) {
   }
   v.rolagem = 0
   v.novos = 0
+  v.sel = null
 }

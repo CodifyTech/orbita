@@ -11,6 +11,7 @@ import { caixaAcoes, caixaAjuda, caixaComando, caixaEncerrando } from './caixas.
 import { vistaGeral } from './geral.mjs'
 import { vistaLog } from './log.mjs'
 import { sobrepor } from './pecas.mjs'
+import { vistaDetalheRequest } from './request.mjs'
 import { linhaDeToast, rodape } from './rodape.mjs'
 import { splash } from './splash.mjs'
 
@@ -61,7 +62,9 @@ export function quadro(estado, w, h, t = Date.now()) {
       ? vistaGeral(estado, w, alturaConteudo, t)
       : atual === 'alertas'
         ? vistaAlertas(estado, w, alturaConteudo, t)
-        : vistaLog(estado, w, alturaConteudo, atual, t)
+        : estado.detalheRequest
+          ? vistaDetalheRequest(estado, w, alturaConteudo, t)
+          : vistaLog(estado, w, alturaConteudo, atual, t)
   linhas.push(...conteudo.slice(0, alturaConteudo))
   while (linhas.length < h - 2) {
     linhas.push('')

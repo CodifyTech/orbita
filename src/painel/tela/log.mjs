@@ -9,6 +9,7 @@ import {
   CIANO,
   compor,
   escurecer,
+  FUNDO_SEL,
   pinta,
   PRETO,
   SUAVE,
@@ -18,13 +19,47 @@ import {
 } from '../cores.mjs'
 import { processos, servicoDe, vista } from '../estado.mjs'
 import { duracao, horaDe, mb } from '../formato.mjs'
-import { ajustar, centralizar, juntar, quebrar, vis } from '../texto.mjs'
+import { ajustar, centralizar, fatiarPlano, juntar, quebrar, vis } from '../texto.mjs'
 import { latencia } from './cartao.mjs'
 import { ESTADOS, pilula, ponto, spinner, textoEstado } from './pecas.mjs'
 import { realce, realceFiltro } from './realce.mjs'
 
 /** Margem esquerda: espaço + hora (8) + espaço + nome (9, só na "Todos") + barra e espaço. */
 const larguraDaMargem = comNome => 1 + 8 + 1 + (comNome ? 9 : 0) + 2
+/** Linha da tela (0-based) da primeira linha de log: cabeçalho, abas, sublinha e as duas barras da aba. */
+const TOPO_DO_LOG = 5
+
+/**
+ * A rolagem que deixa a linha `idx` inteira na tela, mexendo o mínimo: uma linha longa ocupa várias
+ * linhas de tela, por isso a conta passa pela altura de cada uma.
+ *
+ * @param {any[]} lista
+ * @param {number} idx
+ * @param {number} rolagem a atual
+ * @param {number} altura linhas de tela disponíveis
+ * @param {(linha: any) => number} alturaDe quantas linhas de tela a linha ocupa
+ */
+export function rolagemParaVer(lista, idx, rolagem, altura, alturaDe) {
+  const ultima = lista.length - 1 - rolagem
+  if (idx > ultima) {
+    return lista.length - 1 - idx
+  }
+  let usadas = 0
+  let topo = ultima + 1
+  while (topo > 0 && usadas + alturaDe(lista[topo - 1]) <= altura) {
+    usadas += alturaDe(lista[--topo])
+  }
+  if (idx >= topo) {
+    return rolagem
+  }
+  usadas = 0
+  let fim = idx - 1
+  while (fim + 1 < lista.length && usadas + alturaDe(lista[fim + 1]) <= altura) {
+    usadas += alturaDe(lista[++fim])
+  }
+
+  return lista.length - 1 - Math.max(fim, idx)
+}
 
 /**
  * Primeira linha da aba: o resumo do serviço (ou de todos, na aba "Todos").
@@ -86,8 +121,9 @@ export function vistaLog(estado, w, h, id, t) {
   const alturaLog = h - 2
   // Não rola além do topo: a primeira linha para no alto da tela, sem deixar a tela vazia.
   v.rolagem = Math.min(v.rolagem, Math.max(0, lista.length - alturaLog))
-  if (v.rolagem === 0) {
-    v.novos = 0
+  // Seq só cresce: menor que o da primeira linha é um request que já saiu do histórico.
+  if (v.sel !== null && (!lista.length || v.sel < lista[0].seq)) {
+    v.sel = null
   }
 
   const comando = s ? (s.tipo === 'processo' ? `$ ${s.comando}` : s.descricao) : 'saída de todos os serviços, na ordem em que chegou'
@@ -96,8 +132,20 @@ export function vistaLog(estado, w, h, id, t) {
 
   const comNome = !s
   const larguraTexto = Math.max(10, w - larguraDaMargem(comNome) - 2)
+  if (v.revelar) {
+    v.revelar = false
+    const idx = lista.findLastIndex(l => l.seq === v.sel)
+    if (idx >= 0) {
+      v.rolagem = rolagemParaVer(lista, idx, v.rolagem, alturaLog, l => quebrar(l.texto, larguraTexto).length)
+    }
+  }
+  if (v.rolagem === 0) {
+    v.novos = 0
+  }
   const destaque = estado.destaque && t < estado.destaque.ate ? estado.destaque.seq : null
   const linhas = []
+  /** A linha de log de cada linha de tela, para o clique achar o request. */
+  const origens = []
 
   // De baixo para cima, só até encher a tela: com milhares de linhas, quebrar todas seria caro.
   for (let i = lista.length - 1 - v.rolagem; i >= 0 && linhas.length < alturaLog; i--) {
@@ -105,6 +153,9 @@ export function vistaLog(estado, w, h, id, t) {
     const destacada = l.seq === destaque
     const barra = pinta(corDaBarra(l, destacada), destacada ? '▶' : '▎')
     const bloco = quebrar(l.texto, larguraTexto).map((pedaco, k) => {
+      if (l.seq === v.sel) {
+        return compor([[BRANCO, fatiarPlano(` ${k === 0 ? horaDe(l.t) : ' '.repeat(8)} › ${pedaco}`, 0, w - 1), true]], FUNDO_SEL)
+      }
       const hora = k === 0 ? pinta(destacada ? AMARELO : APAGADO, horaDe(l.t)) : ' '.repeat(8)
       const nome = comNome ? `${k === 0 ? pinta(l.s.cor, l.s.nome.padEnd(8).slice(0, 8)) : ' '.repeat(8)} ` : ''
       const texto = filtro ? realceFiltro(pedaco, filtro) : realce(pedaco, l)
@@ -112,10 +163,13 @@ export function vistaLog(estado, w, h, id, t) {
       return ` ${hora} ${nome}${barra} ${texto}`
     })
     linhas.unshift(...bloco)
+    origens.unshift(...bloco.map(() => l))
   }
   while (linhas.length > alturaLog) {
     linhas.shift()
+    origens.shift()
   }
+  estado.regioes.log = origens.map((linha, y) => ({ y: TOPO_DO_LOG + y, linha }))
 
   if (!lista.length) {
     const [cor, icone] = s ? ponto(s, t) : [AZUL, spinner(t)]

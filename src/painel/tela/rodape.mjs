@@ -14,8 +14,9 @@ import {
   VERDE,
   VERMELHO,
 } from '../cores.mjs'
-import { abaAtual, nosCartoes, vista } from '../estado.mjs'
+import { abaAtual, nosCartoes, servicoDe, vista } from '../estado.mjs'
 import { SITE_SEM_PROTOCOLO } from '../formato.mjs'
+import { navegavel } from '../requests.mjs'
 import { cortar, juntar, RE_ANSI, vis } from '../texto.mjs'
 
 const TRILHO = [34, 39, 52]
@@ -59,6 +60,26 @@ export const DICAS = {
     ['?', 'ajuda'],
     ['q', 'sair'],
   ],
+  requests: [
+    ['←→', 'abas'],
+    ['↑↓', 'requests'],
+    ['⏎', 'detalhes'],
+    ['PgUp PgDn', 'rolar'],
+    ['End', 'seguir'],
+    ['/', 'filtrar'],
+    ['r', 'reiniciar'],
+    ['s', 'parar/subir'],
+    ['c', 'limpar'],
+    ['y', 'copiar'],
+    ['?', 'ajuda'],
+    ['q', 'sair'],
+  ],
+  detalhe: [
+    ['←→', 'seções'],
+    ['↑↓ PgUp PgDn', 'rolar'],
+    ['y', 'copiar seção'],
+    ['Esc', 'voltar'],
+  ],
   alertas: [
     ['←→', 'abas'],
     ['↑↓', 'escolher'],
@@ -69,6 +90,20 @@ export const DICAS = {
     ['?', 'ajuda'],
     ['q', 'sair'],
   ],
+}
+
+function chaveDasDicas(estado, atual) {
+  if (nosCartoes(estado)) {
+    return 'cartoes'
+  }
+  if (atual === 'geral' || atual === 'alertas') {
+    return atual
+  }
+  if (estado.detalheRequest) {
+    return 'detalhe'
+  }
+
+  return navegavel(servicoDe(estado, atual)) ? 'requests' : 'log'
 }
 
 /** Cursor piscando (meio segundo aceso, meio apagado). */
@@ -86,7 +121,7 @@ export function rodape(estado, w, t) {
 
     return juntar(` ${forte(AMARELO, '/')} ${pinta(BRANCO, v.filtro)}${pinta(AMARELO, cursor(t))}`, `${pinta(SUAVE, '⏎ aplicar · Esc limpar')} `, w)
   }
-  const dicas = DICAS[nosCartoes(estado) ? 'cartoes' : atual === 'geral' || atual === 'alertas' ? atual : 'log']
+  const dicas = DICAS[chaveDasDicas(estado, atual)]
   const direita = w >= 130 ? `${estado.mouse ? pinta(SUAVE, 'mouse ligado · ') : ''}${pinta(APAGADO, SITE_SEM_PROTOCOLO)} ` : ''
 
   // Só as dicas que cabem inteiras; `?` (a ajuda completa) e `q` nunca saem.

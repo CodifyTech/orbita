@@ -1,7 +1,9 @@
-// Mouse (ligado com `m`): a roda rola o log ou a lista da aba; o clique escolhe a aba, o cartão ou o
-// alerta (o segundo clique no já escolhido abre). Usa as regiões que a tela anotou ao desenhar.
+// Mouse (`m` liga e desliga): a roda rola o log ou a lista da aba; o clique escolhe a aba, o cartão, o
+// alerta ou o request (o segundo clique no já escolhido abre). Usa as regiões que a tela anotou ao
+// desenhar.
 import { teclaAcoes } from './acoes.mjs'
-import { abaAtual, irPara, moverCartao, verNoLog } from './estado.mjs'
+import { abaAtual, irPara, moverCartao, servicoDe, verNoLog } from './estado.mjs'
+import { cliqueNoRequest, irParaSecao, navegavel, rolarDetalhe } from './requests.mjs'
 import { rolar, teclaAlertas } from './teclas.mjs'
 
 /** Linha (0-based) da barra de abas na tela. */
@@ -45,6 +47,9 @@ export function tratarMouse(ctx, sequencia) {
     if (estado.overlay) {
       return
     }
+    if (estado.detalheRequest) {
+      return rolarDetalhe(estado.detalheRequest, botao === RODA_PARA_CIMA ? -PASSO_DA_RODA : PASSO_DA_RODA)
+    }
     if (atual === 'geral') {
       return moverCartao(estado, botao === RODA_PARA_CIMA ? -1 : 1)
     }
@@ -67,6 +72,17 @@ export function tratarMouse(ctx, sequencia) {
   }
   if (y === LINHA_DAS_ABAS) {
     return irPara(estado, estado.regioes.abas.find(a => x >= a.x0 && x < a.x1)?.id)
+  }
+  if (estado.detalheRequest) {
+    const secao = estado.regioes.secoes.find(r => r.y === y && x >= r.x0 && x < r.x1)
+
+    return secao ? irParaSecao(estado.detalheRequest, secao.i) : undefined
+  }
+  const servico = servicoDe(estado, atual)
+  if (navegavel(servico)) {
+    const linha = estado.regioes.log.find(r => r.y === y)?.linha
+
+    return linha?.req ? cliqueNoRequest(ctx, servico, linha) : undefined
   }
   if (atual === 'geral') {
     const card = estado.regioes.cards.find(c => x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1)
