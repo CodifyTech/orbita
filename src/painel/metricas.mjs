@@ -6,8 +6,13 @@
 export const MAX_REQUISICOES = 400
 
 const RE_CTRL_C = /Press Ctrl\+C to (?:stop|quit)/i
-/** `/rota ........ ~ 12.5ms` do `php artisan serve` (o carimbo de data já saiu antes daqui). */
-const RE_REQUISICAO = /^\s*(?:\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\s+)?(\/\S*).*?~\s*([\d.]+)\s*(ms|s)\s*$/
+/**
+ * `GET 200 /rota ~ 12.50ms` do roteador do preset laravel, ou `/rota ........ ~ 12.5ms` de um
+ * `php artisan serve` num `cmd` próprio (o carimbo de data já saiu antes daqui).
+ */
+const RE_REQUISICAO = /^\s*(?:\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\s+)?(?:([A-Z]+) (\d{3}) )?(\/\S*).*?~\s*([\d.]+)\s*(ms|s)\s*$/
+/** O que o `php -S` escreve a cada conexão: não diz nada que a linha do request já não conte. */
+const RE_RUIDO_DO_PHP_S = /^(?:\[\d+\] )?\[[^\]]+\] \S+:\d+ (?:Accepted|Closing|Closed without sending|\[\d{3}\]: [A-Z]+ )|Failed to poll event/
 /** `App\Jobs\EnviarEmail ........ RUNNING | DONE | FAIL` do worker de filas do Laravel. */
 const RE_JOB = /^\s*(?:\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\s+)?(\S+).*\b(RUNNING|DONE|FAIL)\s*$/
 
@@ -30,20 +35,27 @@ function reDaSaude(s) {
 }
 
 /**
- * A linha é um request do `php artisan serve`?
+ * A linha é um request do servidor? Verbo e status só vêm na linha do nosso roteador.
  *
  * @param {string} texto linha já limpa
- * @returns {{ caminho: string, ms: number } | null}
+ * @returns {{ caminho: string, ms: number, metodo?: string, status?: number } | null}
  */
 export function lerRequisicao(texto) {
   const r = RE_REQUISICAO.exec(texto)
+  if (!r) {
+    return null
+  }
+  const [, metodo, status, caminho, valor, unidade] = r
 
-  return r ? { caminho: r[1], ms: r[3] === 's' ? Number(r[2]) * 1000 : Number(r[2]) } : null
+  return { caminho, ms: unidade === 's' ? Number(valor) * 1000 : Number(valor), ...(metodo ? { metodo, status: Number(status) } : {}) }
 }
 
 /** Cada tipo de métrica: lê a linha, atualiza `s.metricas` e devolve false para descartar a linha. */
 const ANALISADORES = {
   requisicoes(s, texto, agora) {
+    if (RE_RUIDO_DO_PHP_S.test(texto)) {
+      return false
+    }
     // O painel bate na URL de saúde a cada 5 s: essas linhas só poluiriam o log e a média.
     if (/~/.test(texto) && reDaSaude(s)?.test(texto)) {
       return false

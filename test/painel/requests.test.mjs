@@ -5,7 +5,8 @@ import { abaAtual, criarEstado, irPara, servicoDe, vista } from '../../src/paine
 import { limparLog, linhaDoProcesso, registrar } from '../../src/painel/logs.mjs'
 import { lerRequisicao } from '../../src/painel/metricas.mjs'
 import { criarConsultaDeRequest, lerResposta, paraVariavel, textoDaSecao } from '../../src/painel/requests.mjs'
-import { rolagemParaVer } from '../../src/painel/tela/log.mjs'
+import { colunasDoRequest, rolagemParaVer } from '../../src/painel/tela/log.mjs'
+import { haQuanto } from '../../src/painel/formato.mjs'
 import { quadro } from '../../src/painel/tela/quadro.mjs'
 import { linhasDaSecao } from '../../src/painel/tela/request.mjs'
 import { semCores, vis } from '../../src/painel/texto.mjs'
@@ -119,7 +120,7 @@ describe('escolher o request', () => {
     const c = criarCtx()
     c.teclar(CIMA)
     const tela = quadro(c.estado, LARGURA, ALTURA, 0)
-    assert.ok(tela.some(l => semCores(l).includes('› /api/r3')))
+    assert.ok(tela.some(l => new RegExp('› .*/api/r3 ').test(semCores(l))))
     tela.forEach(l => assert.equal(vis(l), LARGURA))
   })
 
@@ -127,7 +128,7 @@ describe('escolher o request', () => {
     const c = criarCtx({ linhas: 60 })
     c.teclar(...Array(40).fill(CIMA))
     assert.equal(selecionada(c), '/api/r21')
-    assert.ok(quadro(c.estado, LARGURA, ALTURA, 0).some(l => semCores(l).includes('› /api/r21')))
+    assert.ok(quadro(c.estado, LARGURA, ALTURA, 0).some(l => new RegExp('› .*/api/r21 ').test(semCores(l))))
   })
 
   it('com request escolhido, as linhas novas não empurram a vista', () => {
@@ -136,7 +137,7 @@ describe('escolher o request', () => {
     c.request('/api/novo')
     assert.equal(c.v.rolagem, 1)
     assert.equal(c.v.novos, 1)
-    assert.ok(quadro(c.estado, LARGURA, ALTURA, 0).some(l => semCores(l).includes('› /api/r3')))
+    assert.ok(quadro(c.estado, LARGURA, ALTURA, 0).some(l => new RegExp('› .*/api/r3 ').test(semCores(l))))
   })
 
   it('o filtro limita os requests escolhíveis e descarta a escolha', () => {
@@ -405,5 +406,65 @@ describe('rolagemParaVer', () => {
 
   it('considera as linhas que ocupam mais de uma linha de tela', () => {
     assert.equal(rolagemParaVer(lista, 50, 0, 10, () => 2), 45)
+  })
+})
+
+describe('colunas do request', () => {
+  const linha = (req, t = 0) => ({ t, req })
+
+  it('lê verbo e status da linha do roteador', () => {
+    assert.deepEqual(lerRequisicao('POST 201 /api/pedidos ~ 12.50ms'), { caminho: '/api/pedidos', ms: 12.5, metodo: 'POST', status: 201 })
+  })
+
+  it('mostra verbo, status, caminho, duração e há quanto tempo, na largura exata', () => {
+    const { plano, pintado } = colunasDoRequest(linha({ metodo: 'DELETE', status: 404, caminho: '/api/x', ms: 1234 }), 80, 180_000)
+    assert.match(plano, /^DELETE +404 \/api\/x \.+ +~ 1\.23s +há 3min$/)
+    assert.equal(vis(plano), 80)
+    assert.equal(vis(pintado), 80)
+    assert.equal(semCores(pintado), plano)
+  })
+
+  it('caminho longo é cortado sem passar da largura', () => {
+    const { plano } = colunasDoRequest(linha({ metodo: 'GET', status: 200, caminho: `/${'a'.repeat(200)}`, ms: 3 }), 46, 0)
+    assert.equal(vis(plano), 46)
+    assert.ok(plano.includes('…'))
+  })
+
+  it('linha do artisan serve (cmd próprio) fica sem verbo e status, mas com as outras colunas', () => {
+    assert.match(colunasDoRequest(linha({ caminho: '/x', ms: 5 }), 60, 0).plano, /^··· +··· \/x .*~ 5ms +agora$/)
+  })
+
+  it('a idade anda sozinha a cada quadro', () => {
+    const c = criarCtx({ linhas: 1 })
+    assert.ok(quadro(c.estado, LARGURA, ALTURA, 7000).some(l => semCores(l).includes('há 6s')))
+    assert.ok(quadro(c.estado, LARGURA, ALTURA, 3_601_000).some(l => semCores(l).includes('há 1h')))
+  })
+
+  it('haQuanto', () => {
+    assert.deepEqual([500, 42_000, 180_000, 7_200_000, 172_800_000].map(haQuanto), ['agora', 'há 42s', 'há 3min', 'há 2h', 'há 2d'])
+  })
+
+  it('o ruído de conexão do php -S não aparece nem conta', () => {
+    const c = criarCtx({ linhas: 0 })
+    for (const ruido of ['[Sun Nov  8 23:06:12 2026] 127.0.0.1:5000 Accepted', '[Sun Nov  8 23:06:12 2026] 127.0.0.1:5000 Closing', '[Sun Nov  8 23:06:12 2026] 127.0.0.1:5000 [200]: GET /favicon.ico', '[123] [Sun Nov  8 23:06:12 2026] [::1]:5000 Accepted']) {
+      linhaDoProcesso(c.estado, c.s, ruido, 1000)
+    }
+    assert.equal(c.s.linhas.length, 0)
+  })
+
+  it('o aviso do PHP continua aparecendo', () => {
+    const c = criarCtx({ linhas: 0 })
+    linhaDoProcesso(c.estado, c.s, '[Sun Nov  8 23:06:12 2026] PHP 8.5.12 Development Server (http://127.0.0.1:8000) started', 1000)
+    assert.equal(c.s.linhas.length, 1)
+  })
+
+  it('o filtro acha pelo verbo e pelo status', () => {
+    const c = criarCtx({ linhas: 0 })
+    linhaDoProcesso(c.estado, c.s, 'GET 200 /a ~ 1.00ms', 1000)
+    linhaDoProcesso(c.estado, c.s, 'POST 500 /b ~ 1.00ms', 1000)
+    c.v.filtro = '500'
+    const tela = quadro(c.estado, LARGURA, ALTURA, 2000).map(semCores).join('\n')
+    assert.ok(tela.includes('/b '))
+    assert.ok(!tela.includes('/a '))
   })
 })

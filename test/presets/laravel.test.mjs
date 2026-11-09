@@ -105,7 +105,7 @@ describe('comandos dos presets', () => {
       return servico.preset.comando(servico, contexto)
     }
 
-    assert.equal(comando('server'), 'php artisan serve --host=127.0.0.1 --port=8000')
+    assert.match(comando('server'), /^php -S 127.0.0.1:8000 -t public .*servidor.php$/)
     assert.equal(comando('queue'), 'php artisan queue:listen --tries=1 --timeout=0 --queue=default,emails')
     assert.equal(comando('reverb'), 'php artisan reverb:start --port=8080')
     assert.equal(comando('horizon'), 'php artisan horizon')
@@ -115,7 +115,7 @@ describe('comandos dos presets', () => {
   it('usa o PHP de ORBITA_PHP, com aspas se tiver espaço', () => {
     const contexto = contextoFalso({ servicos: { server: { preset: 'laravel', cwd: 'b' } } }, {}, { env: { ORBITA_PHP: 'C:/Program Files/php/php.exe' } })
 
-    assert.equal(contexto.servicos[0].preset.comando(contexto.servicos[0], contexto), '"C:/Program Files/php/php.exe" artisan serve --host=127.0.0.1 --port=8000')
+    assert.ok(contexto.servicos[0].preset.comando(contexto.servicos[0], contexto).startsWith('"C:/Program Files/php/php.exe" -S 127.0.0.1:8000 '))
   })
 })
 

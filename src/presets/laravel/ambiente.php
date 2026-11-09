@@ -109,6 +109,7 @@ function info($app, bool $testarRedis): array
         'redis' => $usaRedis ? redis() : ['estado' => 'nao-usado'],
         'fila' => ['conexao' => config('queue.default'), 'filas' => filas()],
         'cache' => config('cache.default'),
+        'servidor' => ['workers' => (int) env('PHP_CLI_SERVER_WORKERS', 1)],
         'horizon' => ['instalado' => class_exists('Laravel\\Horizon\\Horizon'), 'chokidar' => is_dir(base_path('node_modules/chokidar'))],
         'pail' => class_exists('Laravel\\Pail\\PailServiceProvider'),
         'reverb' => reverb(),
@@ -210,10 +211,10 @@ function reverb(): ?array
 }
 
 /**
- * O request que o painel escolheu, com o que a tela de detalhes do Telescope mostra. A linha do
- * `artisan serve` só traz caminho e tempo, então o par é achado por caminho + momento + duração.
+ * O request que o painel escolheu, com o que a tela de detalhes do Telescope mostra. O par é achado
+ * por caminho + verbo + momento + duração, que é o que a linha do log conta.
  *
- * Entrada: ORBITA_REQUEST = {"caminho": "/api/x", "t": <epoch em ms>, "ms": <duração>}. Vem de uma
+ * Entrada: ORBITA_REQUEST = {"caminho": "/api/x", "t": <epoch em ms>, "ms": <duração>, "metodo": "GET"}. Vem de uma
  * variável de ambiente, e não de argumento, porque o caminho é texto de fora e passa pelo shell.
  * Saída: {ok, resumo, secoes[]}, no formato genérico descrito em src/plano/tipos.mjs.
  */
@@ -251,7 +252,7 @@ function detalheDoRequest(): array
             return ['ok' => false, 'etapa' => 'telescope', 'erro' => 'A tabela do Telescope ainda não existe.', 'dica' => 'Rode as migrations (php artisan migrate).'];
         }
 
-        $entrada = entradaDoRequest($banco, $caminho, $pedido['t'] / 1000, (float) ($pedido['ms'] ?? 0));
+        $entrada = entradaDoRequest($banco, $caminho, $pedido['t'] / 1000, (float) ($pedido['ms'] ?? 0), $pedido['metodo'] ?? null);
 
         if (! $entrada) {
             return [
@@ -269,7 +270,7 @@ function detalheDoRequest(): array
 }
 
 /** A entrada `request` do caminho mais próxima do momento (s) e da duração (ms) informados. */
-function entradaDoRequest($banco, string $caminho, float $momento, float $ms): ?object
+function entradaDoRequest($banco, string $caminho, float $momento, float $ms, ?string $metodo): ?object
 {
     $janela = 5;
     $linhas = $banco->table('telescope_entries')
@@ -285,8 +286,14 @@ function entradaDoRequest($banco, string $caminho, float $momento, float $ms): ?
     foreach ($linhas as $linha) {
         $conteudo = json_decode($linha->content, true) ?: [];
 
-        // O `artisan serve` escreve o caminho decodificado e sem a query string.
-        if (urldecode(strtok((string) ($conteudo['uri'] ?? ''), '?')) !== $caminho) {
+        // O log traz o caminho sem a query string.
+        if (urldecode(strtok((string) ($conteudo['uri'] ?? ''), '?')) !== urldecode($caminho)) {
+            continue;
+        }
+
+        // POST fica de fora porque o Laravel grava o verbo do `_method`: um PUT de formulário chega ao
+        // servidor como POST.
+        if ($metodo && $metodo !== 'POST' && ($conteudo['method'] ?? null) !== $metodo) {
             continue;
         }
 

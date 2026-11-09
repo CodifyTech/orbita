@@ -63,7 +63,7 @@ que o `doctor` e o `setup` fazem por ele. Um preset desconhecido é erro, com a 
 
 | Preset | Sobe com | Porta | Saúde | O doctor confere |
 |---|---|:-:|---|---|
-| `laravel` | `php artisan serve --host --port` | 8000 | `/up` | `APP_KEY`, `JWT_SECRET` (se usa tymon/jwt-auth), banco (conexão e migrations), Redis (se a fila/cache usa) |
+| `laravel` | `php -S` com o roteador do Órbita (como o `artisan serve`, mas o log traz verbo e status) | 8000 | `/up` | `APP_KEY`, `JWT_SECRET` (se usa tymon/jwt-auth), banco (conexão e migrations), Redis (se a fila/cache usa) |
 | `laravel:queue` | `php artisan queue:listen` com **todas** as filas do Horizon | — | — | conexão da fila (`sync` é aviso) |
 | `laravel:horizon` | `horizon:listen` (com chokidar) ou `horizon` | — | — | sai sozinho sem pcntl ou sem fila redis (aí vale o `laravel:queue`) |
 | `laravel:schedule` | `php artisan schedule:work` | — | — | |
@@ -91,7 +91,7 @@ O que é de **uma** máquina (e não vai para o git) fica num `.env`: o do prime
 | Variável | Efeito |
 |---|---|
 | `DEV_ONLY` / `DEV_EXCEPT` | filtro fixo de serviços (o `--only` da execução vence o `DEV_ONLY`) |
-| `DEV_SERVER_HOST` | host do `php artisan serve` (padrão `127.0.0.1`; `0.0.0.0` expõe na rede) |
+| `DEV_SERVER_HOST` | host do servidor da API (padrão `127.0.0.1`; `0.0.0.0` expõe na rede) |
 | `DEV_SERVER_PORT` | porta do serviço `laravel` |
 | `REVERB_SERVER_PORT` | porta do `laravel:reverb` (no `.env` do próprio app) |
 | `DEV_<NOME>_PORT` | porta de qualquer outro serviço: `web` → `DEV_WEB_PORT`, `api-pix` → `DEV_API_PIX_PORT` |

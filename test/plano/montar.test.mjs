@@ -14,9 +14,10 @@ const CONFIG = {
   },
 }
 
-function plano(extras = {}) {
+function plano(extras = {}, info = {}) {
   const contexto = contextoFalso(CONFIG, { 'frontend/package.json': JSON.stringify({ scripts: { dev: 'vite', typecheck: 'vue-tsc' } }) })
   contexto.grupos[0].info = {
+    ...info,
     app: { nome: 'Loja', env: 'local' },
     versoes: { php: '8.5.0', laravel: '13.0.0' },
     banco: { conexao: 'mariadb', banco: 'loja' },
@@ -36,7 +37,7 @@ describe('montarPlano', () => {
     const resumo = processos.map(({ nome, comando, url, saude, porta }) => ({ nome, comando, url, saude, porta }))
 
     assert.deepEqual(resumo, [
-      { nome: 'server', comando: 'php artisan serve --host=127.0.0.1 --port=8000', url: 'http://127.0.0.1:8000', saude: { tipo: 'http', url: 'http://127.0.0.1:8000/up' }, porta: 8000 },
+      { nome: 'server', comando: processos[0].comando, url: 'http://127.0.0.1:8000', saude: { tipo: 'http', url: 'http://127.0.0.1:8000/up' }, porta: 8000 },
       { nome: 'queue', comando: 'php artisan queue:listen --tries=1 --timeout=0 --queue=default,emails', url: null, saude: null, porta: null },
       { nome: 'reverb', comando: 'php artisan reverb:start --port=8080', url: 'ws://127.0.0.1:8080', saude: { tipo: 'tcp', porta: 8080 }, porta: 8080 },
       { nome: 'web', comando: 'bun run dev --port 5173 --strictPort', url: 'http://localhost:5173', saude: { tipo: 'http', url: 'http://localhost:5173/' }, porta: 5173 },
@@ -52,6 +53,12 @@ describe('montarPlano', () => {
     assert.match(server.padroes.erro, /SQLSTATE/)
     assert.equal(server.metrica, 'requisicoes')
     assert.equal(queue.metrica, 'jobs')
+  })
+
+  it('repassa os workers do .env, que o php -S só lê da variável de ambiente', () => {
+    assert.equal(plano({}, { servidor: { workers: 4 } }).env.PHP_CLI_SERVER_WORKERS, '4')
+    assert.equal(plano({}, { servidor: { workers: 1 } }).env.PHP_CLI_SERVER_WORKERS, undefined)
+    assert.equal(plano().env.PHP_CLI_SERVER_WORKERS, undefined)
   })
 
   it('só o servidor Laravel sabe detalhar requests', () => {

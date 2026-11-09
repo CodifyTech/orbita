@@ -1,4 +1,4 @@
-// Família "laravel": a API (php artisan serve) e os processos que moram na mesma pasta: fila,
+// Família "laravel": a API (php -S com o nosso roteador) e os processos que moram na mesma pasta: fila,
 // Horizon, scheduler, Reverb e Pail. O que só o Laravel sabe vem do ambiente.php (consulta.mjs).
 // Porta do `DevServiceProvider.php` e do `config/dev.php` do FoodOS.
 import { join } from 'node:path'
@@ -7,7 +7,7 @@ import { linhaDeComando } from '../../ambiente/executar.mjs'
 import { apontaParaEstaMaquina } from '../../projeto/urls.mjs'
 import { ehFrontendVite } from '../node.mjs'
 import { PADROES_PHP } from '../padroes.mjs'
-import { consultarLaravel, SCRIPT } from './consulta.mjs'
+import { consultarLaravel, ROTEADOR, SCRIPT } from './consulta.mjs'
 import { diagnosticarLaravel } from './diagnostico.mjs'
 import { repararLaravel } from './reparo.mjs'
 import { configuracaoLaravel } from './setup.mjs'
@@ -31,12 +31,13 @@ const filasDe = servico => servico.grupo?.info?.fila?.filas ?? ['default']
 export const PRESETS_LARAVEL = [
   presetLaravel({
     nome: 'laravel',
-    descricao: 'API Laravel · php artisan serve',
+    descricao: 'API Laravel · servidor embutido do PHP',
     cor: [96, 165, 250],
     porta: 8000,
     health: '/up',
     metrica: 'requisicoes',
-    comando: (servico, contexto) => artisan(contexto, 'serve', `--host=${servico.host}`, `--port=${servico.porta}`),
+    // É o que o `artisan serve` roda por baixo, só que a saída dele esconde o verbo e o status.
+    comando: (servico, contexto) => linhaDeComando(contexto.php, ['-S', `${servico.host}:${servico.porta}`, '-t', 'public', ROTEADOR]),
     detalhesDeRequest: (servico, contexto) => ({ programa: contexto.php, args: [SCRIPT, servico.cwd, 'request'], cwd: servico.cwd }),
   }),
   presetLaravel({
@@ -212,6 +213,8 @@ export const familiaLaravel = {
     const acao = (titulo, ...args) => ({ titulo, detalhe: `php artisan ${args.join(' ')}`, comando: comando(...args), cwd: grupo.cwd })
 
     return {
+      // O `artisan serve` lia isto do .env; o `php -S` só enxerga a variável de ambiente.
+      env: info?.servidor?.workers > 1 ? { PHP_CLI_SERVER_WORKERS: String(info.servidor.workers) } : {},
       logs: [
         {
           nome: 'laravel',

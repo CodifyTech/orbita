@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { precisaDeShell } from '../../ambiente/executar.mjs'
 
 export const SCRIPT = fileURLToPath(new URL('./ambiente.php', import.meta.url))
+export const ROTEADOR = fileURLToPath(new URL('./servidor.php', import.meta.url))
 
 /** PHP a usar: ORBITA_PHP (caminho completo) ou o `php` do PATH. */
 export const binarioDoPhp = (env = process.env) => env.ORBITA_PHP || 'php'

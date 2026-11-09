@@ -76,6 +76,8 @@ export function textoEstado(s, t = Date.now()) {
 
 export const corLatencia = ms => (ms < 150 ? VERDE : ms < 600 ? AMARELO : VERMELHO)
 
+export const corDoStatus = status => (status >= 500 ? VERMELHO : status >= 400 ? AMARELO : status >= 300 ? CIANO : VERDE)
+
 /**
  * As barras do gráfico (sem cor): cada valor vira um de ▁▂▃▄▅▆▇█ proporcional ao maior. Zero é
  * sempre ▁, e qualquer valor acima de zero é no mínimo ▂, para não se confundir com o vazio.

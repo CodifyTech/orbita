@@ -15,12 +15,10 @@ import {
   TEXTO,
   TEXTO_AVISO,
   TEXTO_ERRO,
-  VERDE,
-  VERMELHO,
 } from '../cores.mjs'
 import { horaDe } from '../formato.mjs'
 import { centralizar, cortar, juntar, limpar, quebrar, vis } from '../texto.mjs'
-import { spinner } from './pecas.mjs'
+import { corDoStatus, spinner } from './pecas.mjs'
 
 /** Linha da tela (0-based) onde o conteúdo da aba começa: depois do cabeçalho, das abas e da sublinha. */
 const TOPO_DO_CONTEUDO = 3
@@ -31,8 +29,6 @@ const COR_DA_CHAVE = [147, 197, 253]
 const COR_DE_TEXTO_JSON = [134, 239, 172]
 const COR_DE_NUMERO = [192, 132, 252]
 const RE_CHAVE = /^(\s*)("(?:[^"\\]|\\.)*")(: ?)(.*)$/
-
-const corDoStatus = status => (status >= 500 ? VERMELHO : status >= 400 ? AMARELO : status >= 300 ? CIANO : VERDE)
 
 function pintarValor(valor) {
   const puro = valor.trim().replace(/,$/, '')
@@ -82,7 +78,7 @@ export function linhasDaSecao(secao, w) {
 
 /** As três linhas do resumo. Antes da resposta só existe o que a linha do log contou. */
 function resumoDoRequest(d, w) {
-  const r = d.resumo ?? {}
+  const r = { metodo: d.linha.req.metodo, status: d.linha.req.status, ...d.resumo }
   const caminho = limpar(String(r.caminho ?? d.linha.req.caminho))
   const metodo = r.metodo ? `${compor([[BRANCO, ` ${limpar(String(r.metodo))} `, true]], escurecer(AZUL, 0.45))} ` : ''
   const status = r.status ? compor([[BRANCO, ` ${r.status} `, true]], escurecer(corDoStatus(r.status), 0.45)) : ''

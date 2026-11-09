@@ -106,7 +106,7 @@ export function criarConsultaDeRequest(estado, { executar = executarPadrao, shel
         cwd,
         shell,
         timeout: TEMPO_DA_CONSULTA,
-        env: { ORBITA_REQUEST: paraVariavel({ caminho: linha.req.caminho, t: linha.t, ms: linha.req.ms }) },
+        env: { ORBITA_REQUEST: paraVariavel({ caminho: linha.req.caminho, t: linha.t, ms: linha.req.ms, metodo: linha.req.metodo }) },
       }),
     )
     // O dev pode ter fechado (ou aberto outro) enquanto o programa rodava.

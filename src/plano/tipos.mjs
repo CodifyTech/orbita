@@ -20,7 +20,7 @@
  * @property {string} comando         linha de comando completa, rodada com shell
  * @property {string} cwd             pasta absoluta onde rodar
  * @property {Cor} cor                cor da aba e do prefixo no modo inline
- * @property {string} descricao       linha do cartão (ex.: "API Laravel · php artisan serve")
+ * @property {string} descricao       linha do cartão (ex.: "API Laravel · servidor embutido do PHP")
  * @property {number | null} porta    porta em que escuta (null se não escuta: fila, scheduler)
  * @property {string | null} url      endereço para mostrar/abrir (ex.: "http://localhost:5173", "ws://127.0.0.1:8080")
  * @property {SaudeDoProcesso | null} saude
@@ -36,7 +36,7 @@
  * @property {string[]} args
  * @property {string} cwd             pasta absoluta
  *
- * O painel entrega o request em ORBITA_REQUEST ({ caminho, t, ms }; t em epoch ms) e lê um JSON da saída:
+ * O painel entrega o request em ORBITA_REQUEST ({ caminho, t, ms, metodo? }; t em epoch ms) e lê um JSON da saída:
  *   { ok: true, resumo: ResumoDoRequest, secoes: SecaoDoRequest[] }
  *   { ok: false, etapa: string, erro: string, dica?: string }
  */

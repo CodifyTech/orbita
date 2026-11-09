@@ -22,6 +22,28 @@ export function duracao(ms) {
   return `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}m`
 }
 
+/**
+ * Há quanto tempo, em poucas colunas: "agora", "há 42s", "há 3min", "há 2h", "há 5d".
+ *
+ * @param {number} ms
+ */
+export function haQuanto(ms) {
+  const s = Math.floor(ms / 1000)
+  if (s < 1) {
+    return 'agora'
+  }
+  if (s < 60) {
+    return `há ${s}s`
+  }
+  const m = Math.floor(s / 60)
+  if (m < 60) {
+    return `há ${m}min`
+  }
+  const h = Math.floor(m / 60)
+
+  return h < 24 ? `há ${h}h` : `há ${Math.floor(h / 24)}d`
+}
+
 /** "14:03:59" no fuso local. */
 export const horaDe = t => new Date(t).toTimeString().slice(0, 8)
 

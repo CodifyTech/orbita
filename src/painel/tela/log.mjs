@@ -10,24 +10,67 @@ import {
   compor,
   escurecer,
   FUNDO_SEL,
+  NEGRITO,
   pinta,
   PRETO,
   SUAVE,
   SUBLINHADO,
   TEXTO,
+  VERDE,
   VERMELHO,
 } from '../cores.mjs'
 import { processos, servicoDe, vista } from '../estado.mjs'
-import { duracao, horaDe, mb } from '../formato.mjs'
+import { duracao, haQuanto, horaDe, mb } from '../formato.mjs'
 import { ajustar, centralizar, fatiarPlano, juntar, quebrar, vis } from '../texto.mjs'
 import { latencia } from './cartao.mjs'
-import { ESTADOS, pilula, ponto, spinner, textoEstado } from './pecas.mjs'
+import { corDoStatus, ESTADOS, pilula, ponto, spinner, textoEstado } from './pecas.mjs'
 import { realce, realceFiltro } from './realce.mjs'
 
 /** Margem esquerda: espaço + hora (8) + espaço + nome (9, só na "Todos") + barra e espaço. */
 const larguraDaMargem = comNome => 1 + 8 + 1 + (comNome ? 9 : 0) + 2
 /** Linha da tela (0-based) da primeira linha de log: cabeçalho, abas, sublinha e as duas barras da aba. */
 const TOPO_DO_LOG = 5
+
+const COR_DO_VERBO = { GET: [96, 165, 250], POST: VERDE, PUT: AMARELO, PATCH: AMARELO, DELETE: VERMELHO }
+/** Colunas de largura fixa de uma linha de request. */
+const COLUNA_DO_VERBO = 7
+const COLUNA_DA_DURACAO = 9
+const COLUNA_DE_IDADE = 8
+
+const textoDaDuracao = ms => `~ ${ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`}`
+
+/**
+ * Uma linha de request em colunas: verbo, status, caminho (cortado se não couber), duração e há
+ * quanto tempo aconteceu. Ocupa sempre uma linha de tela, com largura exata `w`.
+ *
+ * @param {import('../estado.mjs').Linha & { req: any }} l
+ * @param {number} w
+ * @param {number} t agora
+ * @returns {{ plano: string, pintado: string }}
+ */
+export function colunasDoRequest(l, w, t) {
+  const { metodo, status, caminho, ms } = l.req
+  const verbo = (metodo ?? '···').padEnd(COLUNA_DO_VERBO)
+  const codigo = status ? String(status) : '···'
+  const tempo = textoDaDuracao(ms).padStart(COLUNA_DA_DURACAO)
+  const idade = haQuanto(t - l.t).padStart(COLUNA_DE_IDADE)
+  const livre = Math.max(1, w - vis(verbo) - vis(codigo) - vis(tempo) - vis(idade) - 5)
+  const rota = vis(caminho) > livre ? `${fatiarPlano(caminho, 0, livre - 1).trimEnd()}…` : caminho
+  const pontos = vis(rota) < livre - 1 ? ` ${'.'.repeat(livre - vis(rota) - 1)}` : ' '.repeat(livre - vis(rota))
+  const juntarColunas = (a, b, c, d, e, f) => `${a} ${b} ${c}${d} ${e}  ${f}`
+
+  return {
+    plano: juntarColunas(verbo, codigo, rota, pontos, tempo, idade),
+    pintado: juntarColunas(
+      pinta(COR_DO_VERBO[metodo] ?? SUAVE, verbo, NEGRITO),
+      status ? pinta(corDoStatus(status), codigo, NEGRITO) : pinta(APAGADO, codigo),
+      pinta([147, 197, 253], rota),
+      pinta([52, 58, 74], pontos),
+      pinta([192, 132, 252], tempo),
+      pinta(SUAVE, idade),
+    ),
+  }
+}
 
 /**
  * A rolagem que deixa a linha `idx` inteira na tela, mexendo o mínimo: uma linha longa ocupa várias
@@ -136,7 +179,7 @@ export function vistaLog(estado, w, h, id, t) {
     v.revelar = false
     const idx = lista.findLastIndex(l => l.seq === v.sel)
     if (idx >= 0) {
-      v.rolagem = rolagemParaVer(lista, idx, v.rolagem, alturaLog, l => quebrar(l.texto, larguraTexto).length)
+      v.rolagem = rolagemParaVer(lista, idx, v.rolagem, alturaLog, l => (l.req ? 1 : quebrar(l.texto, larguraTexto).length))
     }
   }
   if (v.rolagem === 0) {
@@ -152,13 +195,14 @@ export function vistaLog(estado, w, h, id, t) {
     const l = lista[i]
     const destacada = l.seq === destaque
     const barra = pinta(corDaBarra(l, destacada), destacada ? '▶' : '▎')
-    const bloco = quebrar(l.texto, larguraTexto).map((pedaco, k) => {
+    const colunas = l.req ? colunasDoRequest(l, larguraTexto, t) : null
+    const bloco = (colunas ? [colunas.plano] : quebrar(l.texto, larguraTexto)).map((pedaco, k) => {
       if (l.seq === v.sel) {
         return compor([[BRANCO, fatiarPlano(` ${k === 0 ? horaDe(l.t) : ' '.repeat(8)} › ${pedaco}`, 0, w - 1), true]], FUNDO_SEL)
       }
       const hora = k === 0 ? pinta(destacada ? AMARELO : APAGADO, horaDe(l.t)) : ' '.repeat(8)
       const nome = comNome ? `${k === 0 ? pinta(l.s.cor, l.s.nome.padEnd(8).slice(0, 8)) : ' '.repeat(8)} ` : ''
-      const texto = filtro ? realceFiltro(pedaco, filtro) : realce(pedaco, l)
+      const texto = filtro ? realceFiltro(pedaco, filtro) : (colunas?.pintado ?? realce(pedaco, l))
 
       return ` ${hora} ${nome}${barra} ${texto}`
     })

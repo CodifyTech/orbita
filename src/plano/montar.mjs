@@ -21,7 +21,7 @@ export function montarPlano(contexto, { reiniciar }) {
   return {
     projeto: { nome: projeto.config.nome, slogan: projeto.config.slogan, logo: projeto.config.logo, raiz: projeto.raiz },
     processos: contexto.servicos.map(servico => processoDoPlano(servico, contexto)),
-    env: { ...contexto.envDaExecucao },
+    env: Object.assign({}, ...partes.map(parte => parte.env), contexto.envDaExecucao),
     reiniciar,
     logs: semNomesRepetidos(juntar('logs')),
     ambiente: juntar('ambiente'),

@@ -100,7 +100,7 @@
  * @property {(grupo: Grupo, contexto: Contexto) => Etapa[]} [configuracao]
  * @property {(frontend: Servico, grupo: Grupo, contexto: Contexto) => Record<string, string>} [extrasDoFrontend]
  *           variáveis que um frontend precisa deste backend (ex.: as do Reverb para o Vite)
- * @property {(grupo: Grupo, contexto: Contexto) => Partial<Pick<import('../plano/tipos.mjs').Plano, 'logs' | 'ambiente' | 'acoes' | 'alvos'>>} paraOPlano
+ * @property {(grupo: Grupo, contexto: Contexto) => Partial<Pick<import('../plano/tipos.mjs').Plano, 'env' | 'logs' | 'ambiente' | 'acoes' | 'alvos'>>} paraOPlano
  */
 
 /**
