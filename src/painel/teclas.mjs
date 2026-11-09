@@ -6,7 +6,7 @@
 // então os testes passam um ctx falso e conferem o estado e as chamadas.
 import { teclaAcoes } from './acoes.mjs'
 import { abrirComando, imprimivel, teclaComando } from './comando-livre.mjs'
-import { abaAtual, abas, irPara, mostrarToast, servicoDe, trocarAba, verNoLog, visiveis, vista } from './estado.mjs'
+import { abaAtual, abas, irPara, mostrarToast, moverCartao, nosCartoes, servicoDe, trocarAba, verNoLog, visiveis, vista } from './estado.mjs'
 import { limparAlertas, limparLog, limparTodos, linhasVisiveis, textoDoAlerta } from './logs.mjs'
 
 /**
@@ -127,9 +127,11 @@ export function tratarTecla(ctx, k) {
 
       return
     case 'direita':
+      return nosCartoes(estado) ? moverCartao(estado, 1) : trocarAba(estado, 1)
+    case 'esquerda':
+      return nosCartoes(estado) ? moverCartao(estado, -1) : trocarAba(estado, -1)
     case 'tab':
       return trocarAba(estado, 1)
-    case 'esquerda':
     case 'shifttab':
       return trocarAba(estado, -1)
     case 'a':
@@ -163,7 +165,10 @@ export function tratarTecla(ctx, k) {
   teclaLog(ctx, nome, atual === 'todos' ? null : servicoDe(estado, atual))
 }
 
-/** Visão geral: ↑↓ escolhem o cartão; as outras teclas agem no serviço escolhido. */
+/**
+ * Visão geral: ↓ ou ⏎ descem das abas para os cartões (onde ←→ escolhem o serviço, em `tratarTecla`)
+ * e ↑ volta às abas; nos cartões, ⏎ abre os logs. As letras agem no serviço escolhido.
+ */
 export function teclaGeral(ctx, nome) {
   const { estado } = ctx
   const cards = visiveis(estado)
@@ -171,14 +176,18 @@ export function teclaGeral(ctx, nome) {
   switch (nome) {
     case 'cima':
     case 'k':
-      estado.selCard = (estado.selCard - 1 + cards.length) % cards.length
+      estado.focoNosCartoes = false
       break
     case 'baixo':
     case 'j':
-      estado.selCard = (estado.selCard + 1) % cards.length
+      estado.focoNosCartoes = cards.length > 0
       break
     case 'enter':
-      irPara(estado, s?.nome)
+      if (nosCartoes(estado)) {
+        irPara(estado, s?.nome)
+      } else {
+        estado.focoNosCartoes = cards.length > 0
+      }
       break
     case 'r':
       s && ctx.reiniciar(s)

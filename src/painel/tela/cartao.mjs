@@ -76,16 +76,17 @@ export const latencia = s =>
  * @param {boolean} selecionado
  * @param {boolean} compacto
  * @param {number} t agora
+ * @param {boolean} [foco] as setas estão nos cartões: o escolhido ganha a marca ▸ no título
  * @returns {string[]} as linhas do cartão, cada uma com largura `w`
  */
-export function cartao(s, w, selecionado, compacto, t = Date.now()) {
+export function cartao(s, w, selecionado, compacto, t = Date.now(), foco = false) {
   const caiu = s.estado === 'caiu'
   const corBorda = selecionado ? (caiu ? VERMELHO : s.cor) : caiu ? escurecer(VERMELHO, 0.35) : [58, 65, 82]
   const b = texto => pinta(corBorda, texto, selecionado ? NEGRITO : '')
   const [corPonto, icone] = ponto(s, t)
   const corEstado = ESTADOS[s.estado]?.cor ?? SUAVE
 
-  const rotulo = `${b('╭─ ')}${pinta(corPonto, icone)} ${forte(selecionado ? clarear(s.cor, 0.3) : s.cor, s.nome)} `
+  const rotulo = `${b('╭─ ')}${selecionado && foco ? b('▸ ') : ''}${pinta(corPonto, icone)}${forte(selecionado ? clarear(s.cor, 0.3) : s.cor, s.nome)} `
   const direita = ` ${pinta(corEstado, textoEstado(s, t))} ${b('─╮')}`
   const topo = cortar(rotulo + b('─'.repeat(Math.max(0, w - vis(rotulo) - vis(direita)))) + direita, w)
   const linha = conteudo => `${b('│')} ${ajustar(conteudo, w - 4)} ${b('│')}`

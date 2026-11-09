@@ -14,6 +14,7 @@ const ESC = '\x1b'
 const CIMA = '\x1b[A'
 const BAIXO = '\x1b[B'
 const DIREITA = '\x1b[C'
+const ESQUERDA = '\x1b[D'
 
 /** Contexto falso: guarda cada ação chamada em `chamadas`. */
 function criarCtx(plano = criarPlanoFalso()) {
@@ -105,9 +106,10 @@ describe('tratarTecla: globais', () => {
 })
 
 describe('tratarTecla: visão geral', () => {
-  it('↑↓ escolhem o cartão (dando a volta) e as letras agem nele', () => {
+  it('↓ desce para os cartões: ←→ escolhem o serviço (dando a volta) e as letras agem nele', () => {
     const { estado, chamadas, teclar } = criarCtx()
-    teclar(BAIXO)
+    teclar(BAIXO, DIREITA)
+    assert.equal(abaAtual(estado), 'geral')
     assert.equal(estado.selCard, 1)
     teclar('r', 's', 'o')
     assert.deepEqual(chamadas, [
@@ -115,10 +117,48 @@ describe('tratarTecla: visão geral', () => {
       ['alternar', 'queue'],
       ['abrirServico', 'queue'],
     ])
-    teclar(CIMA, CIMA)
+    teclar(ESQUERDA, ESQUERDA)
     assert.equal(estado.selCard, 2)
+    teclar(DIREITA)
+    assert.equal(estado.selCard, 0)
+  })
+
+  it('↑ volta às abas: ←→ trocam de aba de novo, sem mexer no cartão', () => {
+    const { estado, teclar } = criarCtx()
+    teclar(BAIXO, DIREITA, CIMA)
+    assert.equal(estado.focoNosCartoes, false)
+    teclar(DIREITA)
+    assert.equal(abaAtual(estado), 'todos')
+    assert.equal(estado.selCard, 1)
+  })
+
+  it('⏎ primeiro desce para os cartões e, lá, abre os logs do serviço', () => {
+    const { estado, teclar } = criarCtx()
     teclar('\r')
+    assert.equal(abaAtual(estado), 'geral')
+    assert.equal(estado.focoNosCartoes, true)
+    teclar(ESQUERDA, '\r')
     assert.equal(abaAtual(estado), 'laravel')
+  })
+
+  it('sair da visão geral devolve o foco às abas', () => {
+    const { estado, teclar } = criarCtx()
+    teclar(BAIXO, '\t')
+    assert.equal(abaAtual(estado), 'todos')
+    teclar('1', DIREITA)
+    assert.equal(abaAtual(estado), 'todos')
+    irPara(estado, 'geral')
+    teclar(BAIXO, '\r')
+    assert.equal(abaAtual(estado), 'server')
+    teclar('1')
+    assert.equal(estado.focoNosCartoes, false)
+  })
+
+  it('sem cartões, ↓ e ⏎ continuam nas abas', () => {
+    const { estado, teclar } = criarCtx(criarPlanoFalso({ processos: [], logs: [] }))
+    teclar(BAIXO, '\r', DIREITA)
+    assert.equal(estado.focoNosCartoes, false)
+    assert.equal(abaAtual(estado), 'todos')
   })
 })
 
@@ -305,8 +345,18 @@ describe('mouse', () => {
     const clique = `\x1b[<0;${card.x0 + 3};${card.y0 + 2}M`
     teclar(clique)
     assert.equal(estado.selCard, 1)
+    assert.equal(estado.focoNosCartoes, true)
     assert.equal(abaAtual(estado), 'geral')
     teclar(clique)
     assert.equal(abaAtual(estado), card.nome)
+  })
+
+  it('na visão geral a roda escolhe o cartão sem mudar o foco', () => {
+    const { estado, teclar } = criarCtx()
+    teclar('\x1b[<65;5;10M')
+    assert.equal(estado.selCard, 1)
+    assert.equal(estado.focoNosCartoes, false)
+    teclar('\x1b[<64;5;10M', '\x1b[<64;5;10M')
+    assert.equal(estado.selCard, 2)
   })
 })

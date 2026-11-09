@@ -15,7 +15,7 @@ import {
   VERDE,
   VERMELHO,
 } from '../cores.mjs'
-import { processos, visiveis } from '../estado.mjs'
+import { nosCartoes, processos, visiveis } from '../estado.mjs'
 import { duracao, mb, plural, SITE_SEM_PROTOCOLO } from '../formato.mjs'
 import { contarAlertas } from '../logs.mjs'
 import { ajustar, centralizar } from '../texto.mjs'
@@ -104,7 +104,7 @@ export function vistaGeral(estado, w, h, t) {
       const y0 = TOPO_DO_CONTEUDO + L.length
       estado.regioes.cards.push({ nome: s.nome, i, x0, x1: x0 + cw, y0, y1: y0 + altura })
 
-      return cartao(s, cw, i === estado.selCard, compacto, t)
+      return cartao(s, cw, i === estado.selCard, compacto, t, nosCartoes(estado))
     })
     for (let y = 0; y < altura; y++) {
       L.push(` ${blocos.map(b => b[y]).join(' ')}`)

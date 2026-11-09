@@ -167,6 +167,7 @@ Aperte **`?`** no painel para ver todos. Os principais:
 | Tecla | Faz |
 |---|---|
 | `←` `→` `Tab` · `1`…`9` | troca de aba · vai direto para a aba |
+| `↓` ou `⏎` · `↑` | na Visão geral: desce para os serviços (`←` `→` escolhem, `⏎` abre os logs) · volta às abas |
 | `↑` `↓` `PgUp` `PgDn` · `End` | rola o log · volta a seguir o fim |
 | `r` · `R` · `s` | reinicia o serviço · reinicia todos · para/sobe |
 | `a` · `:` | ações rápidas · comando livre (Tab troca a pasta; a saída vai para a aba "tarefas") |

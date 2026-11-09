@@ -1,8 +1,8 @@
 // Mouse (ligado com `m`): a roda rola o log ou a lista da aba; o clique escolhe a aba, o cartão ou o
 // alerta (o segundo clique no já escolhido abre). Usa as regiões que a tela anotou ao desenhar.
 import { teclaAcoes } from './acoes.mjs'
-import { abaAtual, irPara, verNoLog } from './estado.mjs'
-import { rolar, teclaAlertas, teclaGeral } from './teclas.mjs'
+import { abaAtual, irPara, moverCartao, verNoLog } from './estado.mjs'
+import { rolar, teclaAlertas } from './teclas.mjs'
 
 /** Linha (0-based) da barra de abas na tela. */
 const LINHA_DAS_ABAS = 1
@@ -46,7 +46,7 @@ export function tratarMouse(ctx, sequencia) {
       return
     }
     if (atual === 'geral') {
-      return teclaGeral(ctx, tecla)
+      return moverCartao(estado, botao === RODA_PARA_CIMA ? -1 : 1)
     }
     if (atual === 'alertas') {
       return teclaAlertas(ctx, tecla)
@@ -70,8 +70,11 @@ export function tratarMouse(ctx, sequencia) {
   }
   if (atual === 'geral') {
     const card = estado.regioes.cards.find(c => x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1)
-    if (card) {
-      card.i === estado.selCard ? irPara(estado, card.nome) : (estado.selCard = card.i)
+    if (card && card.i === estado.selCard) {
+      irPara(estado, card.nome)
+    } else if (card) {
+      estado.selCard = card.i
+      estado.focoNosCartoes = true
     }
   }
   if (atual === 'alertas') {

@@ -14,7 +14,7 @@ import {
   VERDE,
   VERMELHO,
 } from '../cores.mjs'
-import { abaAtual, vista } from '../estado.mjs'
+import { abaAtual, nosCartoes, vista } from '../estado.mjs'
 import { SITE_SEM_PROTOCOLO } from '../formato.mjs'
 import { cortar, juntar, RE_ANSI, vis } from '../texto.mjs'
 
@@ -24,7 +24,18 @@ const TRILHO = [34, 39, 52]
 export const DICAS = {
   geral: [
     ['←→', 'abas'],
-    ['↑↓', 'serviço'],
+    ['↓ ⏎', 'serviços'],
+    ['r', 'reiniciar'],
+    ['s', 'parar/subir'],
+    ['o', 'abrir'],
+    ['a', 'ações'],
+    [':', 'comando'],
+    ['?', 'ajuda'],
+    ['q', 'sair'],
+  ],
+  cartoes: [
+    ['←→', 'serviço'],
+    ['↑', 'abas'],
     ['⏎', 'logs'],
     ['r', 'reiniciar'],
     ['s', 'parar/subir'],
@@ -75,7 +86,7 @@ export function rodape(estado, w, t) {
 
     return juntar(` ${forte(AMARELO, '/')} ${pinta(BRANCO, v.filtro)}${pinta(AMARELO, cursor(t))}`, `${pinta(SUAVE, '⏎ aplicar · Esc limpar')} `, w)
   }
-  const dicas = DICAS[atual === 'geral' || atual === 'alertas' ? atual : 'log']
+  const dicas = DICAS[nosCartoes(estado) ? 'cartoes' : atual === 'geral' || atual === 'alertas' ? atual : 'log']
   const direita = w >= 130 ? `${estado.mouse ? pinta(SUAVE, 'mouse ligado · ') : ''}${pinta(APAGADO, SITE_SEM_PROTOCOLO)} ` : ''
 
   // Só as dicas que cabem inteiras; `?` (a ajuda completa) e `q` nunca saem.

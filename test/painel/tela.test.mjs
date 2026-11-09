@@ -75,6 +75,22 @@ describe('quadro', () => {
     assert.equal(estado.regioes.cards[0].y0, 6)
   })
 
+  it('foco nos cartões: marca o escolhido, afina o traço da aba e troca as dicas do rodapé', () => {
+    const estado = estadoCheio()
+    const nasAbas = quadro(estado, 120, 40, 5000).map(semCores)
+    assert.ok(!nasAbas.some(l => l.includes('▸')))
+    assert.ok(nasAbas[2].includes('━'))
+    assert.match(nasAbas.at(-1), /←→ abas {2}↓ ⏎ serviços/)
+
+    estado.focoNosCartoes = true
+    const linhas = quadro(estado, 120, 40, 5000)
+    linhas.forEach(l => assert.equal(vis(l), 120))
+    const nosCartoes = linhas.map(semCores)
+    assert.equal(nosCartoes.filter(l => l.includes('▸')).length, 1)
+    assert.ok(!nosCartoes[2].includes('━'))
+    assert.match(nosCartoes.at(-1), /←→ serviço {2}↑ abas {2}⏎ logs/)
+  })
+
   it('log rolado mostra o selo de linhas acima do fim', () => {
     const estado = estadoCheio()
     irPara(estado, 'server')

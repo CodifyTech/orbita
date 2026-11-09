@@ -2,7 +2,7 @@
 // linha de baixo, que sublinha a aba ativa. Se não cabe tudo, tira os números e depois mostra só a
 // janela de abas em volta da ativa, com ‹ › indicando que há mais.
 import { APAGADO, BRANCO, clarear, compor, escurecer, pinta, SUAVE, TEXTO, VERMELHO } from '../cores.mjs'
-import { abaAtual, abas } from '../estado.mjs'
+import { abaAtual, abas, nosCartoes } from '../estado.mjs'
 import { ajustar, cortar, vis } from '../texto.mjs'
 import { ponto } from './pecas.mjs'
 
@@ -59,7 +59,9 @@ export function barraDeAbas(estado, w, t) {
   estado.regioes.abas = []
   for (const it of itens.slice(ini, fim + 1)) {
     barra += `${it.texto} `
-    sublinha += it.id === atual ? pinta(it.cor, '━'.repeat(it.w)) + pinta(APAGADO, '─') : pinta(APAGADO, '─'.repeat(it.w + 1))
+    // Com o foco nos cartões, o traço da aba ativa afina: as setas não estão mais aqui.
+    const traco = nosCartoes(estado) ? pinta(escurecer(it.cor, 0.5), '─'.repeat(it.w)) : pinta(it.cor, '━'.repeat(it.w))
+    sublinha += it.id === atual ? traco + pinta(APAGADO, '─') : pinta(APAGADO, '─'.repeat(it.w + 1))
     estado.regioes.abas.push({ id: it.id, x0: x, x1: x + it.w })
     x += it.w + 1
   }

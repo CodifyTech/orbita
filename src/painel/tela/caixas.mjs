@@ -43,8 +43,10 @@ export function caixaAjuda(estado, w, t) {
   const linhas = [
     '',
     `${k('← → Tab')}${d('trocar de aba')}`,
+    `${k('↓ ⏎')}${d('visão geral: descer para os serviços (← → escolhem)')}`,
+    `${k('↑')}${d('visão geral: voltar a navegar pelas abas')}`,
     `${k('1 … 9')}${d('ir direto para a aba')}  ${pinta(SUAVE, '·')}  ${k('e')}${d('alertas')}`,
-    `${k('↑ ↓ PgUp PgDn')}${d('rolar o log / escolher o serviço ou o alerta')}`,
+    `${k('↑ ↓ PgUp PgDn')}${d('rolar o log / escolher o alerta')}`,
     `${k('Home End')}${d('início do log / voltar a seguir o fim')}`,
     `${k('⏎')}${d('abrir os logs do serviço / ver o alerta no log')}`,
     '',

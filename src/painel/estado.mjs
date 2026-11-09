@@ -178,6 +178,8 @@ export function criarEstado(bruto, { agora = Date.now() } = {}) {
     alertasNaoVistos: 0,
     selAlerta: null,
     selCard: 0,
+    /** Na visão geral, ←→ andam pelos cartões (true) ou pelas abas (false). */
+    focoNosCartoes: false,
     abaId: 'geral',
     /** Rolagem, contador de novas e filtro de cada aba de log. */
     vistas: {},
@@ -237,13 +239,17 @@ export function abas(estado) {
 /** A aba escolhida, ou a visão geral se ela sumiu (ex.: a de tarefas depois de limpar). */
 export const abaAtual = estado => (abas(estado).some(a => a.id === estado.abaId) ? estado.abaId : 'geral')
 
-/** Vai para a aba e zera o contador de não vistos dela. */
+/** O dev está navegando entre os cartões da visão geral (e não entre as abas)? */
+export const nosCartoes = estado => estado.focoNosCartoes && abaAtual(estado) === 'geral'
+
+/** Vai para a aba, devolve o foco à barra de abas e zera o contador de não vistos dela. */
 export function irPara(estado, id) {
   if (!id) {
     return
   }
   estado.abaId = id
   estado.digitando = false
+  estado.focoNosCartoes = false
   const s = servicoDe(estado, id)
   if (s) {
     s.naoVistos = 0
@@ -258,6 +264,14 @@ export function trocarAba(estado, passo) {
   const lista = abas(estado)
   const i = lista.findIndex(a => a.id === abaAtual(estado))
   irPara(estado, lista[(i + passo + lista.length) % lista.length].id)
+}
+
+/** Próximo (+1) ou anterior (-1) cartão da visão geral, dando a volta nas pontas. */
+export function moverCartao(estado, passo) {
+  const total = visiveis(estado).length
+  if (total) {
+    estado.selCard = (estado.selCard + passo + total) % total
+  }
 }
 
 /**
