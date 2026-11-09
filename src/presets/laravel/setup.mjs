@@ -2,7 +2,7 @@
 // Porta do `SetupCommand.php` do FoodOS. Pode rodar de novo sem estragar nada.
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join } from 'node:path'
-import { gravarEnv } from '../../ambiente/env.mjs'
+import { gravarEnv, lerEnv } from '../../ambiente/env.mjs'
 import { explicarErroDeBanco, TIPOS, tipoDoErro } from '../../ambiente/erro-de-banco.mjs'
 import { criarMensagens } from '../../ui/mensagens.mjs'
 import { consultarLaravel, explicarFalha } from './consulta.mjs'
@@ -18,6 +18,8 @@ const RODAPE = 'Depois rode `codify setup` de novo.'
  */
 export function configuracaoLaravel(grupo) {
   const env = join(grupo.cwd, '.env')
+  const envDeTestes = join(grupo.cwd, '.env.testing')
+  const exemploDeTestes = join(grupo.cwd, '.env.testing.example')
 
   return [
     {
@@ -25,6 +27,12 @@ export function configuracaoLaravel(grupo) {
       porque: `Criando o ${grupo.pasta}/.env, onde ficam banco, chaves e portas da sua máquina.`,
       pular: () => existsSync(env),
       executar: async contexto => criarEnv(grupo, contexto),
+    },
+    {
+      titulo: `Ambiente de testes (${grupo.pasta})`,
+      porque: `Criando o ${grupo.pasta}/.env.testing, usado pelos testes automatizados no lugar do .env.`,
+      pular: () => existsSync(envDeTestes) || !existsSync(exemploDeTestes),
+      executar: async contexto => criarEnvDeTestes(grupo, contexto),
     },
     {
       titulo: 'Chaves de segurança',
@@ -51,6 +59,14 @@ async function criarEnv(grupo, { saida, estilo }) {
 
   copyFileSync(exemplo, join(grupo.cwd, '.env'))
   mensagens.ok(`${grupo.pasta}/.env criado a partir do .env.example.`)
+
+  return true
+}
+
+/** Só roda quando há .env.testing.example e ainda não há .env.testing (ver o `pular` da etapa). */
+async function criarEnvDeTestes(grupo, { saida, estilo }) {
+  copyFileSync(join(grupo.cwd, '.env.testing.example'), join(grupo.cwd, '.env.testing'))
+  criarMensagens(saida, estilo).ok(`${grupo.pasta}/.env.testing criado a partir do .env.testing.example.`)
 
   return true
 }
@@ -85,7 +101,58 @@ async function chaves(grupo, contexto) {
     return false
   }
 
+  if (!(await chavesDeTestes(grupo, contexto))) {
+    return false
+  }
+
   mensagens.ok('Chaves prontas.')
+
+  return true
+}
+
+/**
+ * Comandos do artisan que faltam para o .env.testing ter as chaves. Deixa cada chave vazia como
+ * `CHAVE=`: o key:generate não grava sem a linha (e ainda sai com 0) e, com `CHAVE=""`, as aspas
+ * sobrariam depois do valor gerado.
+ *
+ * @param {string} arquivo
+ * @param {boolean} usaJwt
+ * @returns {string[]}
+ */
+export function chavesVaziasDeTestes(arquivo, usaJwt) {
+  const atuais = lerEnv(arquivo)
+  const vazias = [['APP_KEY', 'key:generate'], ...(usaJwt ? [['JWT_SECRET', 'jwt:secret']] : [])].filter(([chave]) => !atuais[chave])
+
+  vazias.forEach(([chave]) => gravarEnv(arquivo, chave, ''))
+
+  return vazias.map(([, comando]) => comando)
+}
+
+/** Gera no .env.testing (se o projeto tiver um) as chaves vazias. Espera `grupo.info` preenchido. */
+export async function chavesDeTestes(grupo, contexto) {
+  const arquivo = join(grupo.cwd, '.env.testing')
+
+  if (!existsSync(arquivo)) {
+    return true
+  }
+
+  const comandos = chavesVaziasDeTestes(arquivo, grupo.info.jwt.usa)
+  const mensagens = criarMensagens(contexto.saida, contexto.estilo)
+
+  // Com a config em cache o Laravel ignora o --env e o --force trocaria as chaves do .env principal.
+  if (comandos.length && existsSync(join(grupo.cwd, 'bootstrap', 'cache', 'config.php'))) {
+    mensagens.linha(`    ${contexto.estilo.amarelo('Config em cache:')} não gerei as chaves do .env.testing. Rode \`php artisan config:clear\` em ${grupo.pasta}/ e o \`codify setup\` de novo.`)
+
+    return true
+  }
+
+  for (const comando of comandos) {
+    if (!(await artisan(grupo, contexto.php, [comando, '--env=testing', '--force']))) {
+      mensagens.comoResolver(`O ${comando} do .env.testing falhou (o erro está logo acima).`, [`Rode \`php artisan ${comando} --env=testing\` em ${grupo.pasta}/.`], RODAPE)
+
+      return false
+    }
+  }
 
   return true
 }
